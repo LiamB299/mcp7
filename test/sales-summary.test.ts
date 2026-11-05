@@ -183,4 +183,89 @@ describe('sales_summary', () => {
     const res = await callSummary([], { from: '2026-02-30', to: '2026-03-31', groupBy: 'month' });
     expect(res.isError).toBe(true);
   });
+
+  it('treats omitted from and to as all time, including old and undated sales', async () => {
+    const rows = [
+      sale({ SaleID: 1, OrderDate: '1999-06-01T00:00:00', InvoiceAmount: 1 }),
+      sale({ SaleID: 2, OrderDate: '2026-01-15T00:00:00', InvoiceAmount: 2 }),
+      sale({ SaleID: 3, OrderDate: '2031-12-31T00:00:00', InvoiceAmount: 4 }),
+      sale({ SaleID: 4, OrderDate: null, InvoiceAmount: 8 }),
+    ];
+    const res = await callSummary(rows, { groupBy: 'channel' });
+    const out: Out = res.structuredContent;
+    expect(res.isError).toBeFalsy();
+    expect(out.from).toBeNull();
+    expect(out.to).toBeNull();
+    expect(out.saleCount).toBe(4);
+    expect(out.invoicedTotal).toBe(15);
+  });
+
+  it('applies only a lower bound when only from is given', async () => {
+    const rows = [
+      sale({ SaleID: 1, OrderDate: '2025-12-31T23:59:00', InvoiceAmount: 1 }),
+      sale({ SaleID: 2, OrderDate: '2026-01-10T00:00:00', InvoiceAmount: 2 }),
+      sale({ SaleID: 3, OrderDate: '2030-05-05T00:00:00', InvoiceAmount: 4 }),
+      sale({ SaleID: 4, OrderDate: null, InvoiceAmount: 8 }),
+    ];
+    const res = await callSummary(rows, { from: '2026-01-10', groupBy: 'channel' });
+    const out: Out = res.structuredContent;
+    expect(res.isError).toBeFalsy();
+    expect(out.from).toBe('2026-01-10');
+    expect(out.to).toBeNull();
+    expect(out.saleCount).toBe(2);
+    expect(out.invoicedTotal).toBe(6);
+  });
+
+  it('applies only an upper bound when only to is given', async () => {
+    const rows = [
+      sale({ SaleID: 1, OrderDate: '1999-06-01T00:00:00', InvoiceAmount: 1 }),
+      sale({ SaleID: 2, OrderDate: '2026-01-20T23:59:00', InvoiceAmount: 2 }),
+      sale({ SaleID: 3, OrderDate: '2026-01-21T00:00:00', InvoiceAmount: 4 }),
+      sale({ SaleID: 4, OrderDate: null, InvoiceAmount: 8 }),
+    ];
+    const res = await callSummary(rows, { to: '2026-01-20', groupBy: 'channel' });
+    const out: Out = res.structuredContent;
+    expect(res.isError).toBeFalsy();
+    expect(out.from).toBeNull();
+    expect(out.to).toBe('2026-01-20');
+    expect(out.saleCount).toBe(2);
+    expect(out.invoicedTotal).toBe(3);
+  });
+
+  it('excludes undated sales from a bounded range but groups them under (no date) by month when unbounded', async () => {
+    const rows = [
+      sale({ SaleID: 1, OrderDate: '2026-01-15T00:00:00', InvoiceAmount: 10 }),
+      sale({ SaleID: 2, OrderDate: null, InvoiceAmount: 5 }),
+    ];
+    const bounded = await callSummary(rows, {
+      from: '2026-01-01',
+      to: '2026-01-31',
+      groupBy: 'month',
+    });
+    const boundedOut: Out = bounded.structuredContent;
+    expect(boundedOut.saleCount).toBe(1);
+    expect(boundedOut.groups.map((g: { key: string }) => g.key)).toEqual(['2026-01']);
+
+    const unbounded = await callSummary(rows, { groupBy: 'month' });
+    const unboundedOut: Out = unbounded.structuredContent;
+    expect(unboundedOut.saleCount).toBe(2);
+    expect(unboundedOut.invoicedTotal).toBe(15);
+    expect(unboundedOut.groups).toContainEqual({
+      key: '(no date)',
+      saleCount: 1,
+      invoicedTotal: 5,
+    });
+    expect(unboundedOut.groups).toContainEqual({ key: '2026-01', saleCount: 1, invoicedTotal: 10 });
+  });
+
+  it('still rejects a malformed to when from is omitted', async () => {
+    const res = await callSummary([], { to: '31/01/2026', groupBy: 'month' });
+    expect(res.isError).toBe(true);
+    expect(JSON.stringify(res.content)).toContain('yyyy-MM-dd');
+  });
+
+  it('still rejects a malformed from when to is omitted', async () => {
+    const res = await callSummary([], { from: '2026-02-30', groupBy: 'month' });
+    expect(res.isError).toBe(true);
+  });
 });

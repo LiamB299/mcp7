@@ -10,8 +10,8 @@ loadEnvFile(`${root}.env`);
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
 const reps = Number(arg('reps', 2)), model = arg('model', 'sonnet'), budget = arg('budget', '1.5');
 const only = arg('only', '').split(',').filter(Boolean), arms = arg('arms', 'baseline,treatment').split(',');
-const qs = JSON.parse(readFileSync(`${root}eval/questions.json`)).questions.filter((q) => !only.length || only.includes(q.id));
 const truth = JSON.parse(readFileSync(`${root}eval/out/truth.json`));
+const qs = JSON.parse(readFileSync(`${root}eval/questions.json`)).questions.filter((q) => !only.length || only.includes(q.id)).map((q) => ({ ...q, text: q.text.replace('{ORDER_NUMBER}', truth.Q10?.orderNumber ?? '') }));
 const cwd = '/private/tmp/evalcwd'; // empty dir outside the repo: no CLAUDE.md, docs or src visible
 mkdirSync(cwd, { recursive: true }); mkdirSync(`${root}eval/out/runs`, { recursive: true });
 writeFileSync(`${cwd}/none.json`, '{"mcpServers":{}}');
@@ -35,7 +35,11 @@ function grade(id, a) {
     if (id === 'Q3') { const m = (t) => t.every((x, i) => near(a[i]?.amount, x.invoiced)); return a.length >= 3 && m(truth.Q3.primary) ? 'correct' : a.length >= 3 && m(truth.Q3.altGrossInvoices) ? 'alt-gross' : 'wrong'; }
     if (id === 'Q4') return near(a.totalValue, truth.Q4.totalValue, 1) && near(a.topLocationValue, truth.Q4.topLocationValue, 1) && String(a.topLocation).toLowerCase() === truth.Q4.topLocation.toLowerCase() ? 'correct' : near(a.totalValue, truth.Q4.altIfUnitsMisread, 1) ? 'units-misread' : 'wrong';
     if (id === 'Q5') return near(a.products, truth.Q5.products, 0) ? 'correct' : 'wrong';
-    if (id === 'Q6') { const r = truth.Q6.readings; const hit = Object.entries(r).find(([, n]) => near(a.count, n, 0)); return hit ? `reading:${hit[0]}` : 'wrong'; }
+    if (id === 'Q6') { if (near(a.count, truth.Q6.primary, 0)) return 'correct'; const hit = Object.entries(truth.Q6.readings).find(([, n]) => near(a.count, n, 0)); return hit ? `alt-reading:${hit[0]}` : 'wrong'; }
+    if (id === 'Q7') return near(a.count, truth.Q7.primary, 0) ? 'correct' : near(a.count, truth.Q7.altMasterOrdered, 0) ? 'alt-master-status' : 'wrong';
+    if (id === 'Q8') return near(a.count, truth.Q8.primary, 0) ? 'correct' : near(a.count, truth.Q8.altNotShipped, 0) ? 'alt-includes-shipping' : 'wrong';
+    if (id === 'Q9') return near(a.count, truth.Q9.primary, 0) ? 'correct' : 'wrong';
+    if (id === 'Q10') return near(a.orderTotal, truth.Q10.orderTotal) && a.shipped === truth.Q10.shipped ? 'correct' : a.shipped === false ? 'alt-master-status' : 'wrong';
   } catch { /* fall through */ }
   return 'wrong';
 }

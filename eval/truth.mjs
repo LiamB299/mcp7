@@ -30,6 +30,8 @@ const r2 = (n) => Math.round(n * 100) / 100;
 const sales = (await all('saleList', 'SaleList')).filter((s) => s.Status !== 'VOIDED');
 const avail = await all('ref/productavailability', 'ProductAvailabilityList');
 const purchases = await all('purchaseList', 'PurchaseList');
+const products = await all('product', 'Products');
+const allSales = await all('saleList', 'SaleList');
 
 // Q1 overdue: net invoiced (InvoiceAmount, net of credit notes) minus paid > 0 and due date < asOf.
 const q1 = (amountOf) => {
@@ -71,9 +73,27 @@ const truth = {
   Q3: { primary: q3((s) => s.InvoiceAmount), altGrossInvoices: q3((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'grouped by CustomerID, sum InvoiceAmount (net), non-voided, all dates' },
   Q4: { totalValue: r2(locs.reduce((a, [, v]) => a + v, 0)), topLocationShare: r2(locs[0][1] / locs.reduce((a, [, v]) => a + v, 0)), topLocation: locs[0][0], topLocationValue: r2(locs[0][1]), altIfUnitsMisread: r2(avail.reduce((a, r) => a + r.OnHand, 0)), definition: 'StockOnHand is a value (OnHand x AverageCost), summed over all availability rows' },
   Q5: { products: [...av.values()].filter((v) => v < 0).length, definition: 'distinct product IDs whose summed Available across rows is < 0' },
-  Q6: { readings: q6, definition: "purchaseList Status counts under three defensible readings of 'awaiting receipt'; out of MVP scope, excluded from the kill criterion" },
+  Q6: { primary: q6.plusInvoiced, readings: q6, definition: "Status in (ORDERED, RECEIVING, INVOICED), i.e. orders still awaiting goods (invoice-first orders included, partially received included); other readings recorded for reference" },
+  Q7: q7, Q8: q8, Q9: q9, Q10: q10,
 };
+// Wave 2 (independent re-implementation from raw sub-statuses; deliberately NOT importing src/).
+const open = allSales.filter((s) => !['VOIDED', 'COMPLETED'].includes(s.Status));
+const q7 = { primary: open.filter((s) => s.CombinedPickingStatus === 'NOT PICKED' && s.OrderStatus === 'AUTHORISED').length, altMasterOrdered: allSales.filter((s) => s.Status === 'ORDERED').length, openSales: open.length, definition: 'open (not VOIDED/COMPLETED), order AUTHORISED, CombinedPickingStatus NOT PICKED; alt = master Status ORDERED (the misleading rollup)' };
+const q8 = { primary: open.filter((s) => s.CombinedPackingStatus === 'PACKED' && s.CombinedShippingStatus === 'NOT SHIPPED').length, altNotShipped: open.filter((s) => s.CombinedPackingStatus === 'PACKED' && s.CombinedShippingStatus !== 'SHIPPED').length, definition: 'open, CombinedPackingStatus PACKED and CombinedShippingStatus NOT SHIPPED; alt also counts SHIPPING' };
+const availByProduct = new Map();
+for (const a of avail) availByProduct.set(a.ID, (availByProduct.get(a.ID) ?? 0) + (a.Available ?? 0));
+const withMin = products.filter((p) => (p.MinimumBeforeReorder ?? 0) > 0);
+const q9 = { primary: withMin.filter((p) => (availByProduct.get(p.ID) ?? 0) <= p.MinimumBeforeReorder).length, productsWithThreshold: withMin.length, productsScanned: products.length, definition: 'active products with MinimumBeforeReorder > 0 and summed Available <= minimum (no stock rows = 0)' };
+// Q10: an Advanced sale whose master Status is ORDERED but which has shipped (the rollup trap). Order number stays in eval/out only.
+const pick = allSales.find((s) => s.Type === 'Advanced Sale' && s.Status === 'ORDERED' && s.CombinedShippingStatus === 'SHIPPED');
+let q10 = { found: false };
+if (pick) {
+  await sleep(1200); calls++;
+  const dres = await fetch(`${base}sale?ID=${pick.SaleID}`, { headers });
+  const det = await dres.json();
+  q10 = { found: true, orderNumber: pick.OrderNumber, orderTotal: r2(det.Order?.Total ?? 0), shipped: pick.CombinedShippingStatus === 'SHIPPED', masterStatus: pick.Status, definition: 'order total = Order.Total from sale detail; shipped from CombinedShippingStatus (master status ORDERED is misleading for Advanced sales)' };
+}
 mkdirSync(new URL('./out', import.meta.url).pathname, { recursive: true });
 writeFileSync(new URL('./out/truth.json', import.meta.url).pathname, JSON.stringify(truth, null, 2));
 // Print only non-identifying numbers.
-console.log(JSON.stringify({ calls, salesNonVoided: sales.length, Q1: truth.Q1, Q2keys: Object.keys(truth.Q2.primary).length, Q4: { totalValue: truth.Q4.totalValue, share: truth.Q4.topLocationShare }, Q5: truth.Q5, Q6: truth.Q6.readings }));
+console.log(JSON.stringify({ calls, salesNonVoided: sales.length, Q1: truth.Q1, Q2keys: Object.keys(truth.Q2.primary).length, Q4: { totalValue: truth.Q4.totalValue, share: truth.Q4.topLocationShare }, Q5: truth.Q5, Q6: truth.Q6.readings, Q7: { primary: q7.primary, altMasterOrdered: q7.altMasterOrdered }, Q8: { primary: q8.primary, alt: q8.altNotShipped }, Q9: q9, Q10: { found: q10.found } }));

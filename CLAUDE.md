@@ -30,6 +30,8 @@ TypeScript, Node >=22, ESM, official MCP SDK v2 (`@modelcontextprotocol/server`)
 ## Current MVP
 Read-only tools: `cin7_connection_check`, `receivables_overdue`, `sales_summary`, `stock_position` (ADR 0003, accepted provisionally: eval result in `docs/research/mvp-evaluation.md` — MCP 10/10 vs baseline 8/10 in scope, 2.5x faster, ~1.8x cheaper; re-run with `eval/` after tool changes). Deferred until the MVP is proven: PII masking, response-size budgets, cache, normaliser, writes. Server loads repo `.env` itself; keep the key out of the model's context.
 
+- **Workflow guide:** `docs/workflow-guide.md` explains how we work (for new devs). Keep it updated when conventions or tooling change; add a row to its update log.
+
 ## Layout
 ```
 CLAUDE.md

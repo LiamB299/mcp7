@@ -13,22 +13,58 @@ export class Cin7Error extends Error {
 }
 
 export type FetchLike = typeof fetch;
+export type Query = Record<string, string | number | boolean | undefined>;
 
 export interface Cin7Client {
-  get<T>(path: string, query?: Record<string, string | number | boolean | undefined>): Promise<T>;
+  get<T>(path: string, query?: Query): Promise<T>;
 }
 
+export interface Cin7ClientOptions {
+  /** Minimum gap between request starts. Cin7 allows 60 calls/min per key; default 1100 ms. */
+  minIntervalMs?: number;
+  /** Retries after a 429/503 before giving up. Default 3. */
+  maxRetries?: number;
+  /** Injectable for tests. */
+  sleep?: (ms: number) => Promise<void>;
+}
+
+const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 /**
- * Thin Cin7 Core HTTP client. Single choke point for all upstream calls, so rate limiting
- * (60 calls/min per key), retries and caching can be added here later.
+ * Cin7 Core HTTP client. Single choke point for all upstream calls: requests are paced
+ * serially (the key is shared with other users/scripts) and 429/503 responses are retried
+ * with backoff (V2 returns 429 when over the limit, V1 returns 503). No caching yet.
  */
-export function createCin7Client(config: Config, fetchImpl: FetchLike = fetch): Cin7Client {
-  return {
-    async get<T>(path: string, query: Record<string, string | number | boolean | undefined> = {}) {
-      const url = new URL(path.replace(/^\//, ''), config.baseUrl);
-      for (const [key, value] of Object.entries(query)) {
-        if (value !== undefined) url.searchParams.set(key, String(value));
-      }
+export function createCin7Client(
+  config: Config,
+  fetchImpl: FetchLike = fetch,
+  options: Cin7ClientOptions = {},
+): Cin7Client {
+  const minIntervalMs = options.minIntervalMs ?? 1100;
+  const maxRetries = options.maxRetries ?? 3;
+  const sleep = options.sleep ?? defaultSleep;
+
+  let chain: Promise<unknown> = Promise.resolve();
+  let lastStart = 0;
+
+  /** Run `fn` after earlier requests, at least `minIntervalMs` after the previous start. */
+  function schedule<T>(fn: () => Promise<T>): Promise<T> {
+    const run = chain.then(async () => {
+      const wait = lastStart + minIntervalMs - Date.now();
+      if (wait > 0) await sleep(wait);
+      lastStart = Date.now();
+      return fn();
+    });
+    chain = run.catch(() => undefined);
+    return run;
+  }
+
+  async function request<T>(path: string, query: Query): Promise<T> {
+    const url = new URL(path.replace(/^\//, ''), config.baseUrl);
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined) url.searchParams.set(key, String(value));
+    }
+    for (let attempt = 0; ; attempt++) {
       const res = await fetchImpl(url, {
         headers: {
           'api-auth-accountid': config.accountId,
@@ -36,6 +72,12 @@ export function createCin7Client(config: Config, fetchImpl: FetchLike = fetch): 
           'Content-Type': 'application/json',
         },
       });
+      if ((res.status === 429 || res.status === 503) && attempt < maxRetries) {
+        const retryAfter = Number(res.headers.get('retry-after'));
+        await sleep(retryAfter > 0 ? retryAfter * 1000 : 2000 * 2 ** attempt);
+        lastStart = Date.now();
+        continue;
+      }
       const text = await res.text();
       let body: unknown;
       try {
@@ -52,6 +94,12 @@ export function createCin7Client(config: Config, fetchImpl: FetchLike = fetch): 
         );
       }
       return body as T;
+    }
+  }
+
+  return {
+    get<T>(path: string, query: Query = {}) {
+      return schedule(() => request<T>(path, query));
     },
   };
 }

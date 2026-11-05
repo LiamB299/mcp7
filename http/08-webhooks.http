@@ -1,0 +1,5 @@
+### Webhooks (needs Automation module; may 4xx otherwise)
+GET {{baseUrl}}/webhooks
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json

@@ -1,0 +1,83 @@
+### Locations
+GET {{baseUrl}}/ref/location?Page=1&Limit=50
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Locations (deprecated only)
+GET {{baseUrl}}/ref/location?Deprecated=true
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Tax rules
+GET {{baseUrl}}/ref/tax?Page=1&Limit=50
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Payment terms
+GET {{baseUrl}}/ref/paymentterm?Page=1&Limit=50
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Price tiers
+GET {{baseUrl}}/ref/priceTier
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Carriers
+GET {{baseUrl}}/ref/carrier?Page=1&Limit=50
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Chart of accounts
+GET {{baseUrl}}/ref/account?Page=1&Limit=50
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Bank accounts
+GET {{baseUrl}}/ref/account/bank
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Categories
+GET {{baseUrl}}/ref/category?Page=1&Limit=50
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Brands
+GET {{baseUrl}}/ref/brand?Page=1&Limit=50
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Units of measure
+GET {{baseUrl}}/ref/unit?Page=1&Limit=50
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Attribute sets
+GET {{baseUrl}}/ref/attributeset
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Document templates
+GET {{baseUrl}}/ref/templates
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json
+
+### Ship zones
+GET {{baseUrl}}/reference/shipZones
+api-auth-accountid: {{accountId}}
+api-auth-applicationkey: {{applicationKey}}
+Content-Type: application/json

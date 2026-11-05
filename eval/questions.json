@@ -1,0 +1,42 @@
+{
+  "asOf": "2026-11-05",
+  "note": "Pre-registered 2026-11-05 before any evaluation run. Wording is natural, not definitional: part of what is tested is whether Claude picks the right definition.",
+  "questions": [
+    {
+      "id": "Q1",
+      "scope": "in",
+      "text": "As of 2026-11-05, how many sales have an overdue unpaid invoice balance, and what is the total overdue amount? Ignore voided sales.",
+      "answerFormat": "{\"count\": <integer>, \"total\": <number>}"
+    },
+    {
+      "id": "Q2",
+      "scope": "in",
+      "text": "What was the total invoiced revenue by sales channel for sales ordered between 2026-07-01 and 2026-09-30 inclusive? Ignore voided sales.",
+      "answerFormat": "{\"<channel name>\": <revenue number>, ...}"
+    },
+    {
+      "id": "Q3",
+      "scope": "in",
+      "text": "Who are the top 3 customers by total invoiced amount across all non-voided sales, and how much is each?",
+      "answerFormat": "[{\"customer\": \"<name>\", \"amount\": <number>}, ...]"
+    },
+    {
+      "id": "Q4",
+      "scope": "in",
+      "text": "What is the total value of stock on hand across all locations, and which location holds the most value?",
+      "answerFormat": "{\"totalValue\": <number>, \"topLocation\": \"<name>\", \"topLocationValue\": <number>}"
+    },
+    {
+      "id": "Q5",
+      "scope": "in",
+      "text": "How many distinct products currently have negative available stock (summed across all locations)?",
+      "answerFormat": "{\"products\": <integer>}"
+    },
+    {
+      "id": "Q6",
+      "scope": "out",
+      "text": "How many purchase orders are still awaiting receipt of goods? Ignore voided and completed ones.",
+      "answerFormat": "{\"count\": <integer>}"
+    }
+  ]
+}

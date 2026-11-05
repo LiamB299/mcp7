@@ -21,7 +21,9 @@ API docs: https://dearinventory.docs.apiary.io
 - Credentials: Cin7 sandbox account ID + application key come via env vars (`CIN7_ACCOUNT_ID`, `CIN7_APPLICATION_KEY`) from a gitignored `.env`. Never commit or log them.
 - Sandbox holds test data only; creating/modifying data there is allowed. Still design write tools as if production (confirmation, idempotency, dry-run) — see ADRs.
 - Cin7 API is rate limited (see `docs/research/cin7-core-api.md`); respect it in any script or test.
-- Don't commit unless asked.
+- **Git:** never commit to `master`. Work on a feature branch (`feat/…`, `docs/…`), always commit **and push** (`git push -u origin <branch>`); the user reviews and merges.
+- **Implementation delegation:** delegate implementation work items to Haiku subagents (`model: haiku`), max 5 concurrent; plan and review with the main model.
+- **Data privacy:** user inspects sandbox data first. Docs/commits carry counts, shapes and distributions only, never customer/supplier names, emails or addresses. Raw API bodies stay in the scratchpad.
 
 ## Layout
 ```

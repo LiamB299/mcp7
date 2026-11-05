@@ -3,8 +3,9 @@
 JetBrains HTTP Client files (`.http`), GET only. Purpose: browse sandbox data yourself before sharing any of it.
 
 ## Setup
-1. Copy `http-client.private.env.json.example` → `http-client.private.env.json` (gitignored) and fill in the sandbox `accountId` / `applicationKey`.
-2. Open a `.http` file, pick the **sandbox** environment, run requests one by one (gutter ▶).
+1. Copy `http-client.private.env.json.example` → `http-client.private.env.json` (**gitignored**; keep real credentials only there, never in `http-client.env.json`, which is committed).
+2. Keys: `CIN7_ACCOUNT_ID`, `CIN7_APPLICATION_KEY`, `CIN7_BASE_URL` (API root **without** `/v2`; the requests append `/v2`).
+3. Open a `.http` file, pick the **sandbox** environment, run requests one by one (gutter ▶).
 
 ## Notes
 - Rate limit: **60 calls/min per key**. Run individually; don't "Run all".

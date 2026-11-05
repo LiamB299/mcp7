@@ -1,61 +1,61 @@
 @purchaseId = <PurchaseID from list>
 
 ### Purchase list (header-only)
-GET {{baseUrl}}/purchaseList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/purchaseList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Purchase list updated since
-GET {{baseUrl}}/purchaseList?Page=1&Limit=5&UpdatedSince=2026-01-01T00:00:00.000
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/purchaseList?Page=1&Limit=5&UpdatedSince=2026-01-01T00:00:00.000
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Purchase credit notes list
-GET {{baseUrl}}/purchaseCreditNoteList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/purchaseCreditNoteList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Advanced purchase detail
-GET {{baseUrl}}/advanced-purchase?ID={{purchaseId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase?ID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Stock received
-GET {{baseUrl}}/advanced-purchase/stock?PurchaseID={{purchaseId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/stock?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Put away
-GET {{baseUrl}}/advanced-purchase/put-away?PurchaseID={{purchaseId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/put-away?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Invoice
-GET {{baseUrl}}/advanced-purchase/invoice?PurchaseID={{purchaseId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/invoice?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Credit note
-GET {{baseUrl}}/advanced-purchase/creditnote?PurchaseID={{purchaseId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/creditnote?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Payments
-GET {{baseUrl}}/advanced-purchase/payment?PurchaseID={{purchaseId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/payment?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Manual journals
-GET {{baseUrl}}/advanced-purchase/manualJournal?PurchaseID={{purchaseId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/manualJournal?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json

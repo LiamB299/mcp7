@@ -2,67 +2,67 @@
 @supplierId = <supplier GUID>
 
 ### Customers
-GET {{baseUrl}}/customer?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/customer?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Customer detail with custom product prices
-GET {{baseUrl}}/customer?ID={{customerId}}&IncludeProductPrices=true
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/customer?ID={{customerId}}&IncludeProductPrices=true
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Customer credits
-GET {{baseUrl}}/ref/customer/credits?CustomerID={{customerId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/ref/customer/credits?CustomerID={{customerId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Suppliers
-GET {{baseUrl}}/supplier?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/supplier?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Supplier detail
-GET {{baseUrl}}/supplier?ID={{supplierId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/supplier?ID={{supplierId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Supplier deposits
-GET {{baseUrl}}/ref/supplier/deposits?SupplierID={{supplierId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/ref/supplier/deposits?SupplierID={{supplierId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Own company contacts
-GET {{baseUrl}}/me/contacts
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/me/contacts
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Own company addresses
-GET {{baseUrl}}/me/addresses
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/me/addresses
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### CRM leads
-GET {{baseUrl}}/crm/lead?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/crm/lead?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### CRM opportunities
-GET {{baseUrl}}/crm/opportunity?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/crm/opportunity?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### CRM tasks
-GET {{baseUrl}}/crm/task?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/crm/task?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json

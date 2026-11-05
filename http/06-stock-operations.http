@@ -3,55 +3,55 @@
 @stockTakeId = <id from list>
 
 ### Stock adjustments
-GET {{baseUrl}}/stockadjustmentList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/stockadjustmentList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Stock adjustment detail
-GET {{baseUrl}}/stockadjustment?ID={{adjustmentId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/stockadjustment?ID={{adjustmentId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Stock transfers
-GET {{baseUrl}}/stockTransferList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/stockTransferList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Stock transfer detail
-GET {{baseUrl}}/stockTransfer?ID={{transferId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/stockTransfer?ID={{transferId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Stock takes
-GET {{baseUrl}}/stockTakeList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/stockTakeList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Stock take detail
-GET {{baseUrl}}/stocktake?ID={{stockTakeId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/stocktake?ID={{stockTakeId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Inventory write-offs
-GET {{baseUrl}}/inventoryWriteOffList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/inventoryWriteOffList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Manual journals
-GET {{baseUrl}}/journal?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/journal?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Money tasks
-GET {{baseUrl}}/moneyTaskList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/moneyTaskList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json

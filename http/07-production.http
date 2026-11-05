@@ -2,67 +2,67 @@
 @finishedGoodsId = <id from list>
 
 ### Finished goods (simple assembly) list
-GET {{baseUrl}}/finishedGoodsList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/finishedGoodsList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Finished goods detail
-GET {{baseUrl}}/finishedGoods?ID={{finishedGoodsId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/finishedGoods?ID={{finishedGoodsId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Disassembly list
-GET {{baseUrl}}/disassemblyList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/disassemblyList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Production orders
-GET {{baseUrl}}/production/orderList?Page=1&Limit=5&Status=AllButVoided
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/production/orderList?Page=1&Limit=5&Status=AllButVoided
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Production order detail
-GET {{baseUrl}}/production/order?ProductionOrderID={{productionOrderId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/production/order?ProductionOrderID={{productionOrderId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Production order reference data
-GET {{baseUrl}}/production/order/referenceData
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/production/order/referenceData
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Production runs
-GET {{baseUrl}}/production/order/run?ProductionOrderID={{productionOrderId}}
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/production/order/run?ProductionOrderID={{productionOrderId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Resources
-GET {{baseUrl}}/production/resourceList?Page=1&Limit=5
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/production/resourceList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Workcenters
-GET {{baseUrl}}/production/workcenters
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/production/workcenters
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Suspend reasons
-GET {{baseUrl}}/production/suspendReason
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/production/suspendReason
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json
 
 ### Factory calendar
-GET {{baseUrl}}/production/factoryCalendar?Year=2026
-api-auth-accountid: {{accountId}}
-api-auth-applicationkey: {{applicationKey}}
+GET {{CIN7_BASE_URL}}/v2/production/factoryCalendar?Year=2026
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
 Content-Type: application/json

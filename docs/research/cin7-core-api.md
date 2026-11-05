@@ -308,7 +308,7 @@ Unverified / uncertain items (also marked inline):
 
 ## 7. Verified against the sandbox (2026-11-05)
 
-Read-only probes, 22 calls, no 429s, latency 0.35-1.9 s at about 1 call per 1.2 s. These supersede earlier **[UNVERIFIED]** or doc-derived statements where they conflict. Counts are from a synthetic sandbox; see [sandbox-findings.md](sandbox-findings.md).
+Read-only probes, 23 calls (22 for the investigation plus 1 spike), no 429s, latency 0.35-1.9 s at about 1 call per 1.2 s. These supersede earlier **[UNVERIFIED]** or doc-derived statements where they conflict. Counts are from a synthetic sandbox; see [sandbox-findings.md](sandbox-findings.md).
 
 | Topic | Verified behaviour |
 |---|---|
@@ -322,4 +322,5 @@ Read-only probes, 22 calls, no 429s, latency 0.35-1.9 s at about 1 call per 1.2 
 | Product reorder fields | `ReorderLevels` came back **empty** with `IncludeReorderLevels=true` for all 100 products, while top-level `MinimumBeforeReorder` and `ReorderQuantity` were populated for 13. Product has 83 fields; 100 products = 233 KB. |
 | Transactions | `/transactions` with `FromDate/ToDate` works; keys `Amount, CreditAccountCode, DebitAccountCode, EffectiveDate, ID, OriginalAmount, Reference, TaskID, Transaction, Type, CurrencyRate`. |
 | Production | `/production/orderList` returns `ProductionOrderListItems`, `Total`, `Page` (10 rows; not examined further). |
+| Incremental filter | `saleList?UpdatedSince=<datetime>` filters correctly: `Total` 15 matched the 15 rows a local copy predicted, all on or after the cutoff. Sale detail has no equivalent filter. |
 | Not verified | Behaviour above 60 calls/min (429 and `Retry-After`), `Limit` > 1000, any write behaviour, idempotency, webhook behaviour. |

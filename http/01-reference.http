@@ -1,0 +1,83 @@
+### Locations
+GET {{CIN7_BASE_URL}}/v2/ref/location?Page=1&Limit=50
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Locations (deprecated only)
+GET {{CIN7_BASE_URL}}/v2/ref/location?Deprecated=true
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Tax rules
+GET {{CIN7_BASE_URL}}/v2/ref/tax?Page=1&Limit=50
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Payment terms
+GET {{CIN7_BASE_URL}}/v2/ref/paymentterm?Page=1&Limit=50
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Price tiers
+GET {{CIN7_BASE_URL}}/v2/ref/priceTier
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Carriers
+GET {{CIN7_BASE_URL}}/v2/ref/carrier?Page=1&Limit=50
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Chart of accounts
+GET {{CIN7_BASE_URL}}/v2/ref/account?Page=1&Limit=50
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Bank accounts
+GET {{CIN7_BASE_URL}}/v2/ref/account/bank
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Categories
+GET {{CIN7_BASE_URL}}/v2/ref/category?Page=1&Limit=50
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Brands
+GET {{CIN7_BASE_URL}}/v2/ref/brand?Page=1&Limit=50
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Units of measure
+GET {{CIN7_BASE_URL}}/v2/ref/unit?Page=1&Limit=50
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Attribute sets
+GET {{CIN7_BASE_URL}}/v2/ref/attributeset
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Document templates
+GET {{CIN7_BASE_URL}}/v2/ref/templates
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Ship zones
+GET {{CIN7_BASE_URL}}/v2/reference/shipZones
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json

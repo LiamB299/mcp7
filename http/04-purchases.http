@@ -1,0 +1,61 @@
+@purchaseId = <PurchaseID from list>
+
+### Purchase list (header-only)
+GET {{CIN7_BASE_URL}}/v2/purchaseList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Purchase list updated since
+GET {{CIN7_BASE_URL}}/v2/purchaseList?Page=1&Limit=5&UpdatedSince=2026-01-01T00:00:00.000
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Purchase credit notes list
+GET {{CIN7_BASE_URL}}/v2/purchaseCreditNoteList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Advanced purchase detail
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase?ID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Stock received
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/stock?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Put away
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/put-away?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Invoice
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/invoice?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Credit note
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/creditnote?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Payments
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/payment?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Manual journals
+GET {{CIN7_BASE_URL}}/v2/advanced-purchase/manualJournal?PurchaseID={{purchaseId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json

@@ -16,3 +16,6 @@ __pycache__/
 
 # local HTTP client secrets
 http/http-client.private.env.json
+
+# evaluation output (transcripts may hold customer data)
+eval/out/

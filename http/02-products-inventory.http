@@ -1,0 +1,74 @@
+@productId = <product GUID from list>
+@sku = <SKU>
+
+### Products (first 5, active only)
+GET {{CIN7_BASE_URL}}/v2/product?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Products incl. deprecated
+GET {{CIN7_BASE_URL}}/v2/product?Page=1&Limit=5&IncludeDeprecated=true
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Product detail with expansions (BOM, suppliers, movements, reorder levels, custom prices)
+GET {{CIN7_BASE_URL}}/v2/product?ID={{productId}}&IncludeBOM=true&IncludeSuppliers=true&IncludeMovements=true&IncludeReorderLevels=true&IncludeCustomPrices=true
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Product by SKU
+GET {{CIN7_BASE_URL}}/v2/product?Sku={{sku}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Products modified since
+GET {{CIN7_BASE_URL}}/v2/product?Page=1&Limit=5&ModifiedSince=2026-01-01T00:00:00.000
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Availability (one row per product x location x bin x batch)
+GET {{CIN7_BASE_URL}}/v2/ref/productavailability?Page=1&Limit=10
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Availability for one SKU
+GET {{CIN7_BASE_URL}}/v2/ref/productavailability?Sku={{sku}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Product families
+GET {{CIN7_BASE_URL}}/v2/productFamily?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Suppliers of a product
+GET {{CIN7_BASE_URL}}/v2/product-suppliers?ProductID={{productId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Deals
+GET {{CIN7_BASE_URL}}/v2/reference/deals?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Discount rules
+GET {{CIN7_BASE_URL}}/v2/reference/discount?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Ledger transactions
+GET {{CIN7_BASE_URL}}/v2/transactions?FromDate=2026-01-01T00:00:00.000&ToDate=2026-12-31T00:00:00.000&Page=1&Limit=10
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json

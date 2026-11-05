@@ -1,0 +1,5 @@
+### Webhooks (needs Automation module; may 4xx otherwise)
+GET {{CIN7_BASE_URL}}/v2/webhooks
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json

@@ -6,6 +6,7 @@ Collected information used during development of the Cin7 Core MCP server.
 |---|---|---|
 | [research/cin7-core-api.md](research/cin7-core-api.md) | Interpretation of the Cin7 Core API docs | done 2026-11-05 (from API Blueprint; unverified items marked inline) |
 | [research/mcp-landscape.md](research/mcp-landscape.md) | MCP spec, SDKs, architectures, existing servers | done 2026-11-05 (agent-researched; spot-check key claims before relying) |
+| [research/user-complaints.md](research/user-complaints.md) | ERP-wide and Cin7-specific user complaints, mapped to MCP fit | done 2026-11-05 (thin evidence, see caveats) |
 | [research/mvp-evaluation.md](research/mvp-evaluation.md) | A/B evaluation of the MVP vs Claude Code + Bash (numbers only) | done 2026-11-05 |
 | [workflow-guide.md](workflow-guide.md) | How we work with Claude Code: loop, roles, conventions, lessons (living) | created 2026-11-05 |
 | [design/](design/README.md) | Mermaid diagrams, architecture sketches | empty |

@@ -9,6 +9,19 @@ describe('loadConfig', () => {
   it('applies default base url with trailing slash and does not leak secrets in errors', () => {
     const cfg = loadConfig({ CIN7_ACCOUNT_ID: 'a', CIN7_APPLICATION_KEY: 'k' });
     expect(cfg.baseUrl).toBe('https://inventory.dearsystems.com/ExternalApi/v2/');
+    for (const root of [
+      'https://x.test/ExternalApi',
+      'https://x.test/ExternalApi/',
+      'https://x.test/ExternalApi/v2',
+      'https://x.test/ExternalApi/v2/',
+    ]) {
+      const c = loadConfig({
+        CIN7_ACCOUNT_ID: 'a',
+        CIN7_APPLICATION_KEY: 'k',
+        CIN7_BASE_URL: root,
+      });
+      expect(c.baseUrl).toBe('https://x.test/ExternalApi/v2/');
+    }
     try {
       loadConfig({
         CIN7_ACCOUNT_ID: 'a',

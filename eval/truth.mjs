@@ -66,16 +66,6 @@ for (const a of avail) av.set(a.ID, (av.get(a.ID) ?? 0) + a.Available);
 const cnt = (st) => purchases.filter((p) => st.includes(p.Status)).length;
 const q6 = { orderedReceiving: cnt(['ORDERED', 'RECEIVING']), plusInvoiced: cnt(['ORDERED', 'RECEIVING', 'INVOICED']), plusOrdering: cnt(['ORDERING', 'ORDERED', 'RECEIVING']) };
 
-const truth = {
-  asOf: ASOF, calls, salesNonVoided: sales.length,
-  Q1: { primary: q1((s) => s.InvoiceAmount), altGrossInvoices: q1((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'outstanding = InvoiceAmount (net of credit notes) - PaidAmount > 0; due date < asOf; non-voided' },
-  Q2: { primary: q2((s) => s.InvoiceAmount), altGrossInvoices: q2((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'OrderDate within range, non-voided, sum InvoiceAmount (net of credit notes)' },
-  Q3: { primary: q3((s) => s.InvoiceAmount), altGrossInvoices: q3((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'grouped by CustomerID, sum InvoiceAmount (net), non-voided, all dates' },
-  Q4: { totalValue: r2(locs.reduce((a, [, v]) => a + v, 0)), topLocationShare: r2(locs[0][1] / locs.reduce((a, [, v]) => a + v, 0)), topLocation: locs[0][0], topLocationValue: r2(locs[0][1]), altIfUnitsMisread: r2(avail.reduce((a, r) => a + r.OnHand, 0)), definition: 'StockOnHand is a value (OnHand x AverageCost), summed over all availability rows' },
-  Q5: { products: [...av.values()].filter((v) => v < 0).length, definition: 'distinct product IDs whose summed Available across rows is < 0' },
-  Q6: { primary: q6.plusInvoiced, readings: q6, definition: "Status in (ORDERED, RECEIVING, INVOICED), i.e. orders still awaiting goods (invoice-first orders included, partially received included); other readings recorded for reference" },
-  Q7: q7, Q8: q8, Q9: q9, Q10: q10,
-};
 // Wave 2 (independent re-implementation from raw sub-statuses; deliberately NOT importing src/).
 const open = allSales.filter((s) => !['VOIDED', 'COMPLETED'].includes(s.Status));
 const q7 = { primary: open.filter((s) => s.CombinedPickingStatus === 'NOT PICKED' && s.OrderStatus === 'AUTHORISED').length, altMasterOrdered: allSales.filter((s) => s.Status === 'ORDERED').length, openSales: open.length, definition: 'open (not VOIDED/COMPLETED), order AUTHORISED, CombinedPickingStatus NOT PICKED; alt = master Status ORDERED (the misleading rollup)' };
@@ -93,6 +83,16 @@ if (pick) {
   const det = await dres.json();
   q10 = { found: true, orderNumber: pick.OrderNumber, orderTotal: r2(det.Order?.Total ?? 0), shipped: pick.CombinedShippingStatus === 'SHIPPED', masterStatus: pick.Status, definition: 'order total = Order.Total from sale detail; shipped from CombinedShippingStatus (master status ORDERED is misleading for Advanced sales)' };
 }
+const truth = {
+  asOf: ASOF, calls, salesNonVoided: sales.length,
+  Q1: { primary: q1((s) => s.InvoiceAmount), altGrossInvoices: q1((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'outstanding = InvoiceAmount (net of credit notes) - PaidAmount > 0; due date < asOf; non-voided' },
+  Q2: { primary: q2((s) => s.InvoiceAmount), altGrossInvoices: q2((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'OrderDate within range, non-voided, sum InvoiceAmount (net of credit notes)' },
+  Q3: { primary: q3((s) => s.InvoiceAmount), altGrossInvoices: q3((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'grouped by CustomerID, sum InvoiceAmount (net), non-voided, all dates' },
+  Q4: { totalValue: r2(locs.reduce((a, [, v]) => a + v, 0)), topLocationShare: r2(locs[0][1] / locs.reduce((a, [, v]) => a + v, 0)), topLocation: locs[0][0], topLocationValue: r2(locs[0][1]), altIfUnitsMisread: r2(avail.reduce((a, r) => a + r.OnHand, 0)), definition: 'StockOnHand is a value (OnHand x AverageCost), summed over all availability rows' },
+  Q5: { products: [...av.values()].filter((v) => v < 0).length, definition: 'distinct product IDs whose summed Available across rows is < 0' },
+  Q6: { primary: q6.plusInvoiced, readings: q6, definition: "Status in (ORDERED, RECEIVING, INVOICED), i.e. orders still awaiting goods (invoice-first orders included, partially received included); other readings recorded for reference" },
+  Q7: q7, Q8: q8, Q9: q9, Q10: q10,
+};
 mkdirSync(new URL('./out', import.meta.url).pathname, { recursive: true });
 writeFileSync(new URL('./out/truth.json', import.meta.url).pathname, JSON.stringify(truth, null, 2));
 // Print only non-identifying numbers.

@@ -1,5 +1,5 @@
 // Headless A/B evaluation: Claude Code with Bash+key (baseline) vs the same plus the MCP (treatment).
-// Usage: node eval/run.mjs [--reps 2] [--model sonnet] [--only Q1,Q2] [--budget 1.5] [--arms baseline,treatment]
+// Usage: node eval/run.mjs [--out summary.json] [--reps 2] [--model sonnet] [--only Q1,Q2] [--budget 1.5] [--arms baseline,treatment]
 // Writes transcripts + summary to eval/out/ (gitignored: transcripts hold customer data). Run truth.mjs first.
 import { spawnSync } from 'node:child_process';
 import { loadEnvFile } from 'node:process';
@@ -83,4 +83,4 @@ for (const q of qs) for (const arm of arms) for (let rep = 1; rep <= reps; rep++
   rows.push(row); console.log(JSON.stringify(row));
   writeFileSync(`${root}eval/out/runs/${arm}-${q.id}-${rep}.jsonl`, raw);
 }
-writeFileSync(`${root}eval/out/summary.json`, JSON.stringify(rows, null, 2));
+writeFileSync(`${root}eval/out/${arg('out', 'summary.json')}`, JSON.stringify(rows, null, 2));

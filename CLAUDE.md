@@ -28,7 +28,7 @@ TypeScript, Node >=22, ESM, official MCP SDK v2 (`@modelcontextprotocol/server`)
 `npm run dev` (tsx) · `build` · `typecheck` · `lint` / `format` · `test` · `inspect` (MCP Inspector on built output). Server logs go to **stderr only** (stdout = protocol).
 
 ## Current MVP
-Read-only tools: `cin7_connection_check`, `receivables_overdue`, `sales_summary`, `stock_position` (ADR 0003, status proposed). The key question is whether the MCP beats Claude Code + Bash + the key: see `eval/README.md`. Deferred until the MVP is proven: PII masking, response-size budgets, cache, normaliser, writes. Server loads repo `.env` itself; keep the key out of the model's context.
+Read-only tools: `cin7_connection_check`, `receivables_overdue`, `sales_summary`, `stock_position` (ADR 0003, accepted provisionally: eval result in `docs/research/mvp-evaluation.md` — MCP 10/10 vs baseline 8/10 in scope, 2.5x faster, ~1.8x cheaper; re-run with `eval/` after tool changes). Deferred until the MVP is proven: PII masking, response-size budgets, cache, normaliser, writes. Server loads repo `.env` itself; keep the key out of the model's context.
 
 ## Layout
 ```

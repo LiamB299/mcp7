@@ -1,6 +1,6 @@
 # ADR 0003: Read-only reports MVP for Claude Code (sandbox)
 
-- **Status:** proposed (becomes accepted only if the evaluation in `eval/` supports it; see `docs/research/mvp-evaluation.md` once run)
+- **Status:** accepted, provisional (the pre-registered kill criterion was not triggered; see [mvp-evaluation.md](../research/mvp-evaluation.md); final acceptance on merge)
 - **Date:** 2026-11-05
 
 ## Context
@@ -31,3 +31,6 @@ Pre-registered in `eval/questions.json` and `eval/README.md`: six questions (one
 - If rejected: the evidence points to the workflow assistant (writes) or to a different shape of server.
 - Bias: the same author wrote the tools and the questions, and the sample is small. The evaluation reports that plainly.
 - Tool outputs currently include customer names and are not size-budgeted; acceptable for a sandbox-only Claude Code server, to be revisited before anything wider.
+
+## Evaluation result (2026-11-05)
+In-scope questions: MCP 10/10 correct vs baseline 8/10; baseline cost 1.8x and time 2.5x the MCP's. Kill criterion not triggered. Absolute savings are small (cents, seconds); the clearest advantage is correctness on definition traps and speed. Out-of-scope questions get no answer from a narrow MCP, so tool coverage matters. Details and caveats in [mvp-evaluation.md](../research/mvp-evaluation.md).

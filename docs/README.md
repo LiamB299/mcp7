@@ -15,3 +15,5 @@ Collected information used during development of the Cin7 Core MCP server.
 - New decision of consequence → copy `adr/0000-template.md` to the next number.
 - New term → `glossary.md` (alphabetical).
 - Cite sources with URL + date fetched. Mark unverified claims `(unverified)`.
+
+| [research/mvp-evaluation.md](research/mvp-evaluation.md) | A/B evaluation of the MVP vs Claude Code + Bash | done 2026-11-05 |

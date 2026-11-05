@@ -1,6 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import type { Cin7Client } from './cin7/client.js';
 import { registerConnectionCheck } from './tools/connection-check.js';
+import { registerReceivablesOverdue } from './tools/receivables-overdue.js';
+import { registerSalesSummary } from './tools/sales-summary.js';
+import { registerStockPosition } from './tools/stock-position.js';
 
 export interface ServerDeps {
   cin7: Cin7Client;
@@ -13,5 +16,8 @@ export function createServer({ cin7 }: ServerDeps): McpServer {
     { capabilities: { tools: {} } },
   );
   registerConnectionCheck(server, cin7);
+  registerReceivablesOverdue(server, cin7);
+  registerSalesSummary(server, cin7);
+  registerStockPosition(server, cin7);
   return server;
 }

@@ -22,5 +22,8 @@ Seeded from general knowledge, refined against the API Blueprint 2026-11-05. Alp
 | **Stock Adjustment** | Manual correction of stock. API default adjusts *Available*, not On Hand, unless `UpdateOnHand=true`. |
 | **Stock Transfer** | Move of stock between locations. |
 | **SaleID vs TaskID** | `SaleID` = master sale; each stage (order, pick, pack, ship, invoice, credit note) has its own `TaskID`. |
+| **Allow-list shaping** | Building tool output from named safe fields instead of deleting known-sensitive ones, so new API fields are dropped by default (`src/shape.ts`). |
+| **Master status** | Cin7's rollup `Status` on a sale. Misleading for Advanced sales (can read ORDERED while shipped); we derive the stage from sub-statuses instead. |
+| **Stage (derived)** | Our workflow position for a sale (`awaiting_pick` ... `awaiting_payment`), computed in `src/stage.ts` from `Type` + `Combined*Status`. |
 | **StockOnHand** | In `/ref/productavailability` this is stock *value* (`OnHand x AverageCost`), not units. |
 | **Transport (MCP)** | Wire mechanism: stdio (local) or Streamable HTTP (remote). |

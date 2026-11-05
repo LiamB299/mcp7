@@ -58,3 +58,46 @@ Not supported / caveats:
 - `sales_summary` requires `from` and `to`; for "all time" the model must choose a wide range. Make both optional (design improvement; the treatment handled it in this run).
 - Highest-value next tools follow the prioritisation order: order lookup, open-orders pipeline, stock health (see [prioritisation](prioritisation.md)), since out-of-scope questions currently get no answer from the MCP arm.
 - Consider keeping Bash + MCP together in real use: the MCP for covered, correct-by-definition answers, Bash as the escape hatch (with key exposure as the trade-off).
+
+---
+
+# Wave 2 evaluation (2026-11-06)
+
+Same protocol and kill criterion; questions Q7-Q10 and Q6's move into scope were pre-registered in `eval/questions.json` before the first run. 30 headless runs (20 on the new questions at 2 runs per arm, plus Q1-Q5 once per arm as regression), about $0.74 notional. Sandbox truth refreshed before and after: **no drift**. The treatment arm now has 7 tools; the baseline is unchanged.
+
+New in scope: **Q6** purchase orders awaiting receipt (was out of scope), **Q7** open sales not yet picked (the master-status trap: 85 sales say ORDERED, 52 are actually unpicked), **Q8** open sales packed but not shipped, **Q9** products at or below their reorder point, **Q10** the total and shipped state of one named order (an Advanced sale whose master status says ORDERED but has shipped; the order number is substituted at run time and never committed).
+
+## Results
+
+| Measure | Baseline | Treatment | Ratio |
+|---|---|---|---|
+| Correct, all 15 runs | 12 / 15 | **15 / 15** | |
+| Correct, new questions (10 runs) | 8 / 10 | 10 / 10 | |
+| Correct, Q1-Q5 regression (5 runs) | 4 / 5 | 5 / 5 | |
+| Cost, all | $0.429 | $0.310 | 1.38x |
+| Duration, all | 204 s | 97 s | 2.1x |
+| Turns, all | 47 | 46 | 1.0x |
+| New questions: cost / duration | $0.244 / 126 s | $0.191 / 64 s | 1.28x / 2.0x |
+| Regression: cost / duration | $0.185 / 78 s | $0.119 / 32 s | 1.55x / 2.4x |
+| Literal key string in transcript | 0 | 0 | |
+
+| Q | Baseline grades | Treatment grades |
+|---|---|---|
+| Q1 | correct | correct |
+| Q2 | alt-gross (net-vs-gross trap) | correct |
+| Q3, Q4, Q5 | correct | correct |
+| Q6 awaiting receipt | wrong, wrong (both answered 60) | correct, correct |
+| Q7 unpicked open sales | correct, correct | correct, correct |
+| Q8 packed not shipped | correct, correct | correct, correct |
+| Q9 at or below reorder point | correct, correct | correct, correct |
+| Q10 order total and shipped | correct, correct | correct, correct |
+
+## Reading the result honestly
+
+- **Kill criterion not triggered.** The baseline was less correct (12/15 vs 15/15). On this wave the cost ratio (1.38x) is *below* the 1.5x line, so cost no longer separates the arms; correctness and speed (2.1x) carry the case.
+- **Q6 is a definition ambiguity, not a hard error.** Both baseline runs counted status ORDERED only (60) and said so; the pre-registered primary reading is ORDERED, RECEIVING or INVOICED with goods not fully received (65). 60 was not among the three recorded readings, so the strict grade is "wrong". Counting it as an accepted reading makes the baseline 14/15. The treatment's advantage here is a stated, consistent definition, not superior reasoning.
+- **The stage normaliser's headline trap did not separate the arms.** Q7 (master status ORDERED vs sub-statuses) and Q10 (shipped despite ORDERED) were answered correctly by the baseline in all four runs: Sonnet reads the sub-statuses when the question says "picked" or "shipped". The only hard baseline miss was again net-vs-gross invoices (Q2). The normaliser is verified against independent truth (52 / 31 / 65 exact) and still removes a real hazard for broader questions, but this evaluation does not demonstrate its value on its own.
+- **Personal-data protection is not measured by this eval.** The questions needed only totals and shipped state. It is verified by unit tests (no email, phone, address, contact or note text leaves `maskSale`) and by the live gate (no such keys in `order_lookup` output).
+- Treatment runs always show 2 tool calls (a tool-discovery step, then the tool); one run (Q5) used 4 turns because it called two tools.
+- Same caveats as before: same author for tools and questions, n of 1-2 per cell, one model, small synthetic sandbox, generous baseline context.
+- Spend per run stays at a few cents; cost is not a reason for or against the MCP at this scale.

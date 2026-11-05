@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "cin7-core": {
+      "command": "node",
+      "args": ["dist/index.js"]
+    }
+  }
+}

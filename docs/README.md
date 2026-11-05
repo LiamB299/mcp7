@@ -7,7 +7,7 @@ Collected information used during development of the Cin7 Core MCP server.
 | [research/cin7-core-api.md](research/cin7-core-api.md) | Interpretation of the Cin7 Core API docs | done 2026-11-05 (from API Blueprint; unverified items marked inline) |
 | [research/mcp-landscape.md](research/mcp-landscape.md) | MCP spec, SDKs, architectures, existing servers | done 2026-11-05 (agent-researched; spot-check key claims before relying) |
 | [design/](design/README.md) | Mermaid diagrams, architecture sketches | empty |
-| [adr/](adr/) | Architecture decision records | template, ADR 1 (ADRs), ADR 2 (TypeScript + SDK v2) |
+| [adr/](adr/) | Architecture decision records | template, ADR 1 (ADRs), ADR 2 (TypeScript + SDK v2), ADR 3 (reports MVP, proposed) |
 | [glossary.md](glossary.md) | Cin7 + MCP terminology | seeded |
 | [justifications.md](justifications.md) | Lightweight "why we did X" log | started |
 

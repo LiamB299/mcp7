@@ -25,6 +25,16 @@ Requires Node >=22.
 ```
 Debug with `npm run inspect`.
 
+## Tools (read-only)
+| Tool | Answers |
+|---|---|
+| `cin7_connection_check` | Credentials and tenant (company, currency, timezone) |
+| `receivables_overdue` | Outstanding and overdue invoices as of a date, age buckets, largest balances |
+| `sales_summary` | Invoiced revenue by month, channel or customer over a date range |
+| `stock_position` | Stock value and units by location, top products, negative-available heads-up |
+
+The server loads the repo-root `.env` itself (path resolved from the script, not the working directory). `.mcp.json` registers it for Claude Code; project-scoped servers need a one-time approval: run `claude` in this repo and accept it (check with `claude mcp list`).
+
 ## Docs
 `docs/README.md` indexes research, ADRs, glossary and design notes. `CLAUDE.md` has working conventions.
 

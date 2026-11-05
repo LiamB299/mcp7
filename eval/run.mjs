@@ -25,13 +25,35 @@ const near = (a, b, tol = 0.01) => typeof a === 'number' && Math.abs(a - b) <= t
 function grade(id, a) {
   try {
     if (id === 'Q1') return near(a.count, truth.Q1.primary.count, 0) && near(a.total, truth.Q1.primary.total) ? 'correct' : near(a.count, truth.Q1.altGrossInvoices.count, 0) && near(a.total, truth.Q1.altGrossInvoices.total) ? 'alt-gross' : 'wrong';
-    if (id === 'Q2') { const m = (t) => Object.entries(t).every(([k, v]) => near(Object.entries(a).find(([x]) => x.toLowerCase().replace(/[()]/g, '') === k.toLowerCase().replace(/[()]/g, ''))?.[1], v)) && Object.keys(a).length === Object.keys(t).length; return m(truth.Q2.primary) ? 'correct' : m(truth.Q2.altGrossInvoices) ? 'alt-gross' : 'wrong'; }
+    if (id === 'Q2') {
+      const vals = (o) => Object.values(o).filter((v) => typeof v === 'number');
+      let v = vals(a); const sum = v.reduce((x, y) => x + y, 0);
+      if (v.length > 1) { const i = v.findIndex((x) => near(x, sum - x, 0.01)); if (i >= 0) v = v.filter((_, j) => j !== i); } // drop a 'total' entry
+      const m = (t) => { const w = vals(t).filter((x) => x !== 0).sort((x, y) => x - y); const g = v.filter((x) => x !== 0).sort((x, y) => x - y); return w.length === g.length && w.every((x, i) => near(g[i], x)); };
+      return m(truth.Q2.primary) ? 'correct' : m(truth.Q2.altGrossInvoices) ? 'alt-gross' : 'wrong';
+    }
     if (id === 'Q3') { const m = (t) => t.every((x, i) => near(a[i]?.amount, x.invoiced)); return a.length >= 3 && m(truth.Q3.primary) ? 'correct' : a.length >= 3 && m(truth.Q3.altGrossInvoices) ? 'alt-gross' : 'wrong'; }
     if (id === 'Q4') return near(a.totalValue, truth.Q4.totalValue, 1) && near(a.topLocationValue, truth.Q4.topLocationValue, 1) && String(a.topLocation).toLowerCase() === truth.Q4.topLocation.toLowerCase() ? 'correct' : near(a.totalValue, truth.Q4.altIfUnitsMisread, 1) ? 'units-misread' : 'wrong';
     if (id === 'Q5') return near(a.products, truth.Q5.products, 0) ? 'correct' : 'wrong';
-    if (id === 'Q6') return near(a.count, truth.Q6.count, 0) ? 'correct' : 'wrong';
+    if (id === 'Q6') { const r = truth.Q6.readings; const hit = Object.entries(r).find(([, n]) => near(a.count, n, 0)); return hit ? `reading:${hit[0]}` : 'wrong'; }
   } catch { /* fall through */ }
   return 'wrong';
+}
+
+function parseAnswer(text) {
+  const i = text.lastIndexOf('ANSWER_JSON:');
+  if (i < 0) return null;
+  const rest = text.slice(i + 12).replace(/```(json)?/gi, '').replace(/`/g, '');
+  const start = rest.search(/[\[{]/);
+  if (start < 0) return null;
+  const open = rest[start], close = open === '{' ? '}' : ']';
+  let depth = 0, inStr = false;
+  for (let k = start; k < rest.length; k++) {
+    const c = rest[k];
+    if (inStr) { if (c === '\\') k++; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true; else if (c === open) depth++; else if (c === close && --depth === 0) { try { return JSON.parse(rest.slice(start, k + 1)); } catch { return null; } }
+  }
+  return null;
 }
 
 const rows = [];
@@ -48,12 +70,12 @@ for (const q of qs) for (const arm of arms) for (let rep = 1; rep <= reps; rep++
   const events = (r.stdout || '').split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
   const res = events.findLast((e) => e.type === 'result') ?? {};
   const text = String(res.result ?? '');
-  const m = text.match(/ANSWER_JSON:\s*(.+)\s*$/m);
-  let ans; try { ans = JSON.parse(m?.[1] ?? 'null'); } catch { ans = null; }
+  const ans = parseAnswer(text);
   const raw = r.stdout || '';
   const keyHits = process.env.CIN7_APPLICATION_KEY ? raw.split(process.env.CIN7_APPLICATION_KEY).length - 1 : -1;
-  const toolUses = events.filter((e) => e.type === 'assistant').flatMap((e) => e.message?.content ?? []).filter((c) => c.type === 'tool_use').length;
-  const row = { q: q.id, scope: q.scope, arm, rep, grade: ans ? grade(q.id, ans) : 'no-answer', turns: res.num_turns, toolUses, costUsd: res.total_cost_usd, durationMs: res.duration_ms ?? Date.now() - t0, keyInTranscript: keyHits };
+  const uses = events.filter((e) => e.type === 'assistant').flatMap((e) => e.message?.content ?? []).filter((c) => c.type === 'tool_use');
+  const toolUses = uses.length, mcpToolUses = uses.filter((c) => String(c.name).startsWith('mcp__cin7-core')).length;
+  const row = { q: q.id, scope: q.scope, arm, rep, grade: ans ? grade(q.id, ans) : 'no-answer', turns: res.num_turns, toolUses, mcpToolUses, denied: res.permission_denials?.length ?? null, keyAccessibleToModel: arm === 'baseline', costUsd: res.total_cost_usd, durationMs: res.duration_ms ?? Date.now() - t0, keyInTranscript: keyHits };
   rows.push(row); console.log(JSON.stringify(row));
   writeFileSync(`${root}eval/out/runs/${arm}-${q.id}-${rep}.jsonl`, raw);
 }

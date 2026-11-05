@@ -61,7 +61,8 @@ const locs = Object.entries(byLoc).sort((a, b) => b[1] - a[1]);
 const av = new Map();
 for (const a of avail) av.set(a.ID, (av.get(a.ID) ?? 0) + a.Available);
 // Q6 POs awaiting receipt: Status ORDERED or RECEIVING (not RECEIVED/COMPLETED/VOIDED...).
-const q6 = purchases.filter((p) => ['ORDERED', 'RECEIVING'].includes(p.Status)).length;
+const cnt = (st) => purchases.filter((p) => st.includes(p.Status)).length;
+const q6 = { orderedReceiving: cnt(['ORDERED', 'RECEIVING']), plusInvoiced: cnt(['ORDERED', 'RECEIVING', 'INVOICED']), plusOrdering: cnt(['ORDERING', 'ORDERED', 'RECEIVING']) };
 
 const truth = {
   asOf: ASOF, calls, salesNonVoided: sales.length,
@@ -70,9 +71,9 @@ const truth = {
   Q3: { primary: q3((s) => s.InvoiceAmount), altGrossInvoices: q3((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'grouped by CustomerID, sum InvoiceAmount (net), non-voided, all dates' },
   Q4: { totalValue: r2(locs.reduce((a, [, v]) => a + v, 0)), topLocationShare: r2(locs[0][1] / locs.reduce((a, [, v]) => a + v, 0)), topLocation: locs[0][0], topLocationValue: r2(locs[0][1]), altIfUnitsMisread: r2(avail.reduce((a, r) => a + r.OnHand, 0)), definition: 'StockOnHand is a value (OnHand x AverageCost), summed over all availability rows' },
   Q5: { products: [...av.values()].filter((v) => v < 0).length, definition: 'distinct product IDs whose summed Available across rows is < 0' },
-  Q6: { count: q6, definition: "purchaseList Status in ('ORDERED','RECEIVING'); out of MVP scope" },
+  Q6: { readings: q6, definition: "purchaseList Status counts under three defensible readings of 'awaiting receipt'; out of MVP scope, excluded from the kill criterion" },
 };
 mkdirSync(new URL('./out', import.meta.url).pathname, { recursive: true });
 writeFileSync(new URL('./out/truth.json', import.meta.url).pathname, JSON.stringify(truth, null, 2));
 // Print only non-identifying numbers.
-console.log(JSON.stringify({ calls, salesNonVoided: sales.length, Q1: truth.Q1, Q2keys: Object.keys(truth.Q2.primary).length, Q4: { totalValue: truth.Q4.totalValue, share: truth.Q4.topLocationShare }, Q5: truth.Q5, Q6: truth.Q6 }));
+console.log(JSON.stringify({ calls, salesNonVoided: sales.length, Q1: truth.Q1, Q2keys: Object.keys(truth.Q2.primary).length, Q4: { totalValue: truth.Q4.totalValue, share: truth.Q4.topLocationShare }, Q5: truth.Q5, Q6: truth.Q6.readings }));

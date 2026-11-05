@@ -21,11 +21,17 @@ API docs: https://dearinventory.docs.apiary.io
 - Credentials: Cin7 sandbox account ID + application key come via env vars (`CIN7_ACCOUNT_ID`, `CIN7_APPLICATION_KEY`) from a gitignored `.env`. Never commit or log them.
 - Sandbox holds test data only; creating/modifying data there is allowed. Still design write tools as if production (confirmation, idempotency, dry-run) — see ADRs.
 - Cin7 API is rate limited (see `docs/research/cin7-core-api.md`); respect it in any script or test.
-- Don't commit unless asked.
+- **Git:** never commit to `master`. Work on a feature branch (`feat/…`, `docs/…`), always commit **and push** (`git push -u origin <branch>`); the user reviews and merges.
+
+## Stack & commands
+TypeScript, Node >=22, ESM, official MCP SDK v2 (`@modelcontextprotocol/server`), Zod v4, vitest, Biome, npm — see ADR 0002. SDK v2 API differs from v1 examples: check `node_modules/@modelcontextprotocol/server` d.ts/README.
+`npm run dev` (tsx) · `build` · `typecheck` · `lint` / `format` · `test` · `inspect` (MCP Inspector on built output). Server logs go to **stderr only** (stdout = protocol).
 
 ## Layout
 ```
 CLAUDE.md
+src/                   index.ts (stdio entry), server.ts (factory), config.ts, cin7/client.ts, tools/
+test/                  vitest, in-memory client<->server
 docs/
   README.md            index
   glossary.md

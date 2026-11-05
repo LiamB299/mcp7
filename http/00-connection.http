@@ -1,0 +1,5 @@
+### Identity / credentials check (company, currency, timezone, LockDate)
+GET {{CIN7_BASE_URL}}/v2/me
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json

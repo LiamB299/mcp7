@@ -1,0 +1,110 @@
+@saleId = <SaleID from list>
+@taskId = <TaskID from sale detail>
+
+### Sale list (header-only)
+GET {{CIN7_BASE_URL}}/v2/saleList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Sale list updated since
+GET {{CIN7_BASE_URL}}/v2/saleList?Page=1&Limit=5&UpdatedSince=2026-01-01T00:00:00.000
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Sale list ready for shipping
+GET {{CIN7_BASE_URL}}/v2/saleList?Page=1&Limit=5&ReadyForShipping=true
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Sale list by status
+GET {{CIN7_BASE_URL}}/v2/saleList?Page=1&Limit=5&Status=BACKORDERED
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Sale credit notes list
+GET {{CIN7_BASE_URL}}/v2/saleCreditNoteList?Page=1&Limit=5
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Sale detail (full nested tree incl. transactions)
+GET {{CIN7_BASE_URL}}/v2/sale?ID={{saleId}}&IncludeTransactions=true
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Sale detail without inventory movements
+GET {{CIN7_BASE_URL}}/v2/sale?ID={{saleId}}&HideInventoryMovements=true
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Quote
+GET {{CIN7_BASE_URL}}/v2/sale/quote?SaleID={{saleId}}&IncludeProductInfo=true
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Order
+GET {{CIN7_BASE_URL}}/v2/sale/order?SaleID={{saleId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Fulfilment
+GET {{CIN7_BASE_URL}}/v2/sale/fulfilment?SaleID={{saleId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Pick (TaskID from fulfilment)
+GET {{CIN7_BASE_URL}}/v2/sale/fulfilment/pick?TaskID={{taskId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Pack
+GET {{CIN7_BASE_URL}}/v2/sale/fulfilment/pack?TaskID={{taskId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Ship
+GET {{CIN7_BASE_URL}}/v2/sale/fulfilment/ship?TaskID={{taskId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Invoice
+GET {{CIN7_BASE_URL}}/v2/sale/invoice?SaleID={{saleId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Credit note
+GET {{CIN7_BASE_URL}}/v2/sale/creditnote?SaleID={{saleId}}&IncludePaymentInfo=true
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Payments
+GET {{CIN7_BASE_URL}}/v2/sale/payment?SaleID={{saleId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Manual journals
+GET {{CIN7_BASE_URL}}/v2/sale/manualJournal?SaleID={{saleId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json
+
+### Attachments
+GET {{CIN7_BASE_URL}}/v2/sale/attachment?SaleID={{saleId}}
+api-auth-accountid: {{CIN7_ACCOUNT_ID}}
+api-auth-applicationkey: {{CIN7_APPLICATION_KEY}}
+Content-Type: application/json

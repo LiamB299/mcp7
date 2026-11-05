@@ -22,6 +22,9 @@ API docs: https://dearinventory.docs.apiary.io
 - Sandbox holds test data only; creating/modifying data there is allowed. Still design write tools as if production (confirmation, idempotency, dry-run) — see ADRs.
 - Cin7 API is rate limited (see `docs/research/cin7-core-api.md`); respect it in any script or test.
 - **Git:** never commit to `master`. Work on a feature branch (`feat/…`, `docs/…`), always commit **and push** (`git push -u origin <branch>`); the user reviews and merges.
+- **Implementation delegation:** delegate implementation work items to Haiku subagents (`model: haiku`), max 5 concurrent; plan and review with the main model.
+- **Data privacy:** user inspects sandbox data first. Docs/commits carry counts, shapes and distributions only, never customer/supplier names, emails or addresses. Raw API bodies stay in the scratchpad.
+- **Workflow guide:** `docs/workflow-guide.md` explains how we work (for new devs). Keep it updated when conventions or tooling change; add a row to its update log.
 
 ## Stack & commands
 TypeScript, Node >=22, ESM, official MCP SDK v2 (`@modelcontextprotocol/server`), Zod v4, vitest, Biome, npm — see ADR 0002. SDK v2 API differs from v1 examples: check `node_modules/@modelcontextprotocol/server` d.ts/README.
@@ -29,8 +32,6 @@ TypeScript, Node >=22, ESM, official MCP SDK v2 (`@modelcontextprotocol/server`)
 
 ## Current MVP
 Read-only tools: `cin7_connection_check`, `receivables_overdue`, `sales_summary`, `stock_position` (ADR 0003, accepted provisionally: eval result in `docs/research/mvp-evaluation.md` — MCP 10/10 vs baseline 8/10 in scope, 2.5x faster, ~1.8x cheaper; re-run with `eval/` after tool changes). Deferred until the MVP is proven: PII masking, response-size budgets, cache, normaliser, writes. Server loads repo `.env` itself; keep the key out of the model's context.
-
-- **Workflow guide:** `docs/workflow-guide.md` explains how we work (for new devs). Keep it updated when conventions or tooling change; add a row to its update log.
 
 ## Layout
 ```
@@ -41,7 +42,9 @@ docs/
   README.md            index
   glossary.md
   justifications.md
-  research/            cin7-core-api.md, mcp-landscape.md
+  research/            cin7-core-api.md, mcp-landscape.md, user-complaints.md, sandbox-findings.md, prioritisation.md, mvp-evaluation.md
+  workflow-guide.md    how we work with Claude Code (living)
+  eval/ (repo root)    A/B evaluation harness
   design/              mermaid diagrams, architecture sketches
   adr/                 numbered decision records
 ```

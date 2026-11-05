@@ -303,3 +303,24 @@ Unverified / uncertain items (also marked inline):
 - Production module transition rules and field details (only endpoint inventory extracted).
 - Whether the "planned" markup-prices API is now live; whether any sandbox exists.
 - Docs themselves contain typos/inconsistencies (section 4), so field semantics should be confirmed against a trial account before building on them.
+
+---
+
+## 7. Verified against the sandbox (2026-11-05)
+
+Read-only probes, 23 calls (22 for the investigation plus 1 spike), no 429s, latency 0.35-1.9 s at about 1 call per 1.2 s. These supersede earlier **[UNVERIFIED]** or doc-derived statements where they conflict. Counts are from a synthetic sandbox; see [sandbox-findings.md](sandbox-findings.md).
+
+| Topic | Verified behaviour |
+|---|---|
+| Auth / base URL | Headers work as documented; base `https://inventory.dearsystems.com/ExternalApi/v2/`. `/me` returns `Company, Currency, TimeZone, LockDate, OpeningBalanceDate, TaxCalculationMethod, DefaultSaleTaxRuleId/Name, DiscountRule, RoundingTable, ...` |
+| Pagination | `Limit=500` honoured on `/ref/productavailability` (483 rows in one call); `Limit=100` on `saleList`/`purchaseList`/`product`. `Total` present on all paginated lists. Product `Total` (1,559) is active-only by default. |
+| Sale list fields | Date is **`OrderDate`** (detail uses `SaleOrderDate`); last change is **`Updated`** (detail: `LastModifiedOn`). Includes `SaleID, Type, Status, QuoteStatus, OrderStatus, Combined{Picking,Packing,Shipping,Invoice,Payment}Status, CreditNoteStatus, RestockStatus, FulFilmentStatus, InvoiceAmount, PaidAmount, SaleInvoicesTotalAmount, InvoiceDueDate, ShipBy, SourceChannel, ExternalID, CustomerID, Customer, OrderLocationID`. `ExternalID` was empty for all 173 list rows. No lines. |
+| Purchase list fields | Id key is **`ID`** (not `PurchaseID`); date `OrderDate`; change date **`LastUpdatedDate`**; `CombinedReceivingStatus`, `StockReceivedStatus`, `UnstockStatus`, `BlindReceipt`, `RequiredBy`, `DropShipTaskID`. No lines. |
+| Sale detail shape | Top level carries PII (`Customer, Contact, Phone, Email, BillingAddress, ShippingAddress`), plus `Quote, Order, Fulfilments[{TaskID, Pick, Pack, Ship, ...}], Invoices[{TaskID, Payments, Lines, ...}], CreditNotes, InventoryMovements, Transactions, COGSAmount, SourceChannel, ExternalID`. `Order` and `Invoices` each repeat the lines. Observed sizes 4.4-36.8 KB (23-line order: 36.8 KB). **No accounting-sync status fields.** |
+| Status rollup | Master `Status` for **Advanced** sales can read ORDERED while sub-statuses show picked/shipped (9 cases, all Advanced). Compute workflow state from `Type` + `Combined*` fields, not master `Status`. |
+| Availability | `StockOnHand` is stock **value** (`OnHand x AverageCost`, ratio about 1.0 on the 6 sampled rows; **empirical only**: the blueprint documents it just as "StockOnHand." with no definition), not units. `InTransit` was 0 on all rows. `Available = OnHand - Allocated` held on 479 of 483 rows; 4 rows differed: 3 had `OnHand` 0 yet positive `Available` (5, 26, 5), and 1 had `OnHand` 150 with `Available` 183 (cause unverified, possibly assembly/BOM or non-order adjustments). `Bin` empty on all rows, `Batch` on 307. |
+| Product reorder fields | `ReorderLevels` came back **empty** with `IncludeReorderLevels=true` for all 100 products, while top-level `MinimumBeforeReorder` and `ReorderQuantity` were populated for 13. Product has 83 fields; 100 products = 233 KB. |
+| Transactions | `/transactions` with `FromDate/ToDate` works; keys `Amount, CreditAccountCode, DebitAccountCode, EffectiveDate, ID, OriginalAmount, Reference, TaskID, Transaction, Type, CurrencyRate`. |
+| Production | `/production/orderList` returns `ProductionOrderListItems`, `Total`, `Page` (10 rows; not examined further). |
+| Incremental filter | `saleList?UpdatedSince=<datetime>` filters correctly: `Total` 15 matched the 15 rows a local copy predicted, all on or after the cutoff. Sale detail has no equivalent filter. |
+| Not verified | Behaviour above 60 calls/min (429 and `Retry-After`), `Limit` > 1000, any write behaviour, idempotency, webhook behaviour. |

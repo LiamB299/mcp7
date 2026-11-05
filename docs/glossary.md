@@ -22,4 +22,5 @@ Seeded from general knowledge, refined against the API Blueprint 2026-11-05. Alp
 | **Stock Adjustment** | Manual correction of stock. API default adjusts *Available*, not On Hand, unless `UpdateOnHand=true`. |
 | **Stock Transfer** | Move of stock between locations. |
 | **SaleID vs TaskID** | `SaleID` = master sale; each stage (order, pick, pack, ship, invoice, credit note) has its own `TaskID`. |
+| **StockOnHand** | In `/ref/productavailability` this is stock *value* (`OnHand x AverageCost`), not units. |
 | **Transport (MCP)** | Wire mechanism: stdio (local) or Streamable HTTP (remote). |

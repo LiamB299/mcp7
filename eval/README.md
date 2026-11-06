@@ -23,3 +23,8 @@ npm run build
 node eval/truth.mjs                      # ~3 paced API calls
 node eval/run.mjs --reps 2 --model sonnet  # real API spend: ~24 headless Claude runs
 ```
+
+## Document-basis truth (Q1-Q3)
+- `truth-docs.mjs` recomputes Q1 (overdue receivables), Q2 (revenue by channel) and Q3 (top customers) from invoice and credit-note documents, not the list rollups (see the correction in `docs/research/mvp-evaluation.md`). Output: `eval/out/truth-docs.json` (gitignored, separate from `truth.json`).
+- Read-only, about 170 paced calls (one sale list pass plus one `sale` detail per non-voided sale), about 3.5 minutes. Needs `.env` (`CIN7_BASE_URL`, `CIN7_ACCOUNT_ID`, `CIN7_APPLICATION_KEY`).
+- `truth-sku.mjs` merges Q11 into `eval/out/truth.json`, so on a fresh checkout run `node eval/truth.mjs` first, then `node eval/truth-sku.mjs`.

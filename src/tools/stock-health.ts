@@ -4,6 +4,7 @@ import { type Cin7Client, Cin7Error } from '../cin7/client.js';
 import { listAll } from '../cin7/paginate.js';
 import type { AvailabilityRow, ProductRow } from '../cin7/types.js';
 import { dataAsOf } from '../shape.js';
+import { aggregateAvailability, num, productKey } from '../stock/availability.js';
 
 const inputSchema = z.object({
   topN: z
@@ -82,18 +83,6 @@ const DEFINITION =
 
 const EPS = 1e-9;
 const round2 = (n: number) => Math.round(n * 100) / 100;
-const num = (n: number | null | undefined) => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
-const availKey = (r: AvailabilityRow) => r.ID ?? r.SKU ?? '';
-const productKey = (p: ProductRow) => p.ID ?? p.SKU ?? '';
-
-interface Agg {
-  sku: string;
-  name: string;
-  onHand: number;
-  allocated: number;
-  available: number;
-  onOrder: number;
-}
 
 export function registerStockHealth(server: McpServer, cin7: Cin7Client): void {
   server.registerTool(
@@ -122,53 +111,7 @@ export function registerStockHealth(server: McpServer, cin7: Cin7Client): void {
         const rows = availability.rows;
 
         // Aggregate availability rows per product ID.
-        const aggs = new Map<string, Agg>();
-        let negativeRows = 0;
-        const mismatches: {
-          sku: string;
-          onHand: number;
-          allocated: number;
-          available: number;
-          diff: number;
-        }[] = [];
-
-        for (const r of rows) {
-          const onHand = num(r.OnHand);
-          const allocated = num(r.Allocated);
-          const available = num(r.Available);
-          const onOrder = num(r.OnOrder);
-          const key = availKey(r);
-
-          let agg = aggs.get(key);
-          if (!agg) {
-            agg = {
-              sku: r.SKU ?? '',
-              name: r.Name ?? '',
-              onHand: 0,
-              allocated: 0,
-              available: 0,
-              onOrder: 0,
-            };
-            aggs.set(key, agg);
-          }
-          agg.onHand += onHand;
-          agg.allocated += allocated;
-          agg.available += available;
-          agg.onOrder += onOrder;
-
-          if (available < 0) negativeRows++;
-
-          const diff = available - (onHand - allocated);
-          if (Math.abs(diff) > 0.0001) {
-            mismatches.push({
-              sku: r.SKU ?? '',
-              onHand,
-              allocated,
-              available,
-              diff,
-            });
-          }
-        }
+        const { aggs, negativeRows, mismatches } = aggregateAvailability(rows);
 
         const aggList = [...aggs.values()];
 

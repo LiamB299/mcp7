@@ -12,7 +12,7 @@ Collected information used during development of the Cin7 Core MCP server.
 | [research/mvp-evaluation.md](research/mvp-evaluation.md) | A/B evaluation of the MVP vs Claude Code + Bash (numbers only) | done 2026-11-05 |
 | [workflow-guide.md](workflow-guide.md) | How we work with Claude Code: loop, roles, conventions, lessons (living) | created 2026-11-05 |
 | [design/](design/README.md) | Mermaid diagrams: candidate map, fan-out sequence, entities, tool architecture | 4 sketches |
-| [adr/](adr/) | Architecture decision records | template, ADR 1 (ADRs), ADR 2 (TypeScript + SDK v2), ADR 3 (reports MVP, accepted provisionally) |
+| [adr/](adr/) | Architecture decision records | template, ADR 1 (ADRs), ADR 2 (TypeScript + SDK v2), ADR 3 (reports MVP), ADR 4 (PII-safe shaping, stage derivation) |
 | [glossary.md](glossary.md) | Cin7 + MCP terminology | seeded |
 | [justifications.md](justifications.md) | Lightweight "why we did X" log | started |
 

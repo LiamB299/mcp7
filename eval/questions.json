@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-05",
-  "note": "Pre-registered 2026-11-05 before any evaluation run. Wording is natural, not definitional: part of what is tested is whether Claude picks the right definition.",
+  "note": "Pre-registered 2026-11-05 before any evaluation run; wave-2 questions (Q7-Q10) and Q6's move into scope were registered 2026-11-06 before their first run. Wording is natural, not definitional: part of what is tested is whether Claude picks the right definition. {ORDER_NUMBER} is substituted at run time from eval/out/truth.json (never committed).",
   "questions": [
     {
       "id": "Q1",
@@ -34,9 +34,37 @@
     },
     {
       "id": "Q6",
-      "scope": "out",
+      "scope": "in",
       "text": "How many purchase orders are still awaiting receipt of goods? Ignore voided and completed ones.",
       "answerFormat": "{\"count\": <integer>}"
+    },
+    {
+      "id": "Q7",
+      "scope": "in",
+      "wave": 2,
+      "text": "How many open sales have not been picked yet? Open means not voided and not completed.",
+      "answerFormat": "{\"count\": <integer>}"
+    },
+    {
+      "id": "Q8",
+      "scope": "in",
+      "wave": 2,
+      "text": "How many open sales are packed but not yet shipped? Open means not voided and not completed.",
+      "answerFormat": "{\"count\": <integer>}"
+    },
+    {
+      "id": "Q9",
+      "scope": "in",
+      "wave": 2,
+      "text": "How many products that have a reorder point set are at or below it, counting available stock summed across all locations (a product with no stock rows has 0 available)?",
+      "answerFormat": "{\"count\": <integer>}"
+    },
+    {
+      "id": "Q10",
+      "scope": "in",
+      "wave": 2,
+      "text": "For sale {ORDER_NUMBER}: what is the order total, and has it shipped yet?",
+      "answerFormat": "{\"orderTotal\": <number>, \"shipped\": <true|false>}"
     }
   ]
 }

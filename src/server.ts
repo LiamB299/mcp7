@@ -7,6 +7,7 @@ import { registerConnectionCheck } from './tools/connection-check.js';
 import { registerOpenOrdersPipeline } from './tools/open-orders-pipeline.js';
 import { registerOrderLookup } from './tools/order-lookup.js';
 import { registerReceivablesOverdue } from './tools/receivables-overdue.js';
+import { registerReorderSuggestions } from './tools/reorder-suggestions.js';
 import { registerSalesBySku } from './tools/sales-by-sku.js';
 import { registerSalesSummary } from './tools/sales-summary.js';
 import { registerStockHealth } from './tools/stock-health.js';
@@ -34,5 +35,6 @@ export function createServer({ cin7, store }: ServerDeps): McpServer {
   registerCacheStatus(server, store);
   registerCacheRefresh(server, cin7, store);
   registerSalesBySku(server, cin7, store);
+  registerReorderSuggestions(server, cin7, store);
   return server;
 }

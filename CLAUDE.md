@@ -18,7 +18,7 @@ API docs: https://dearinventory.docs.apiary.io
 - Sandbox holds test data only; the brief allows creating data there. Session practice: ask before any write (the user approved exactly one probe on 2026-11-05: create, advance and void a throwaway sale). Design write tools as if production (confirmation, idempotency, dry-run), see ADRs.
 - Cin7 API is rate limited (see `docs/research/cin7-core-api.md`); respect it in any script or test.
 - **Git:** never commit to `master`. Work on a feature branch (`feat/…`, `docs/…`), always commit **and push** (`git push -u origin <branch>`); one PR straight into `master`, **never stack PRs on parent branches**; stage by explicit path; the user reviews and merges.
-- **Implementation delegation:** delegate implementation work items to Haiku subagents (`model: haiku`), max 5 concurrent; plan and review with the main model.
+- **Implementation delegation:** delegate implementation work items to Haiku subagents (`model: haiku`, `effort: "high"`: the user's "haiku large" means large effort), max 5 concurrent; plan and review with the main model.
 - **Data privacy:** user inspects sandbox data first. Docs/commits carry counts, shapes and distributions only, never customer/supplier names, emails or addresses. Raw API bodies stay in the scratchpad.
 - **Workflow guide:** `docs/workflow-guide.md` explains how we work (for new devs). Keep it updated when conventions or tooling change; add a row to its update log.
 

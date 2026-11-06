@@ -101,3 +101,24 @@ New in scope: **Q6** purchase orders awaiting receipt (was out of scope), **Q7**
 - Treatment runs always show 2 tool calls (a tool-discovery step, then the tool); one run (Q5) used 4 turns because it called two tools.
 - Same caveats as before: same author for tools and questions, n of 1-2 per cell, one model, small synthetic sandbox, generous baseline context.
 - Spend per run stays at a few cents; cost is not a reason for or against the MCP at this scale.
+
+---
+
+# Wave 3 evaluation (2026-11-06): revenue by SKU on a document basis
+
+Q11 ("Which 3 SKUs have the highest invoiced revenue excluding tax, and how much did each bring in? Ignore voided sales.") was pre-registered in `eval/questions.json` with three alternative readings (draft invoices included; credit notes ignored; tax-inclusive) before any run. This is the first question whose truth is **document-based** (see the correction above): `eval/truth-sku.mjs` fetched all 164 non-voided sale details independently of `src/` (165 paced calls) and computed authorised or paid invoice lines minus authorised credit-note lines, ex-tax (line `Total` minus line `Tax` on tax-inclusive sales). All three alternative readings produce a different top 3, so the question discriminates. The sandbox fingerprint (174 sales, latest `Updated`, sum of list invoice amounts) was identical before and after the runs.
+
+Four runs, sequential, same protocol: baseline twice; treatment with a fresh cache directory on run 1 (**cold**) and the same directory on run 2 (**warm**). About $0.16 notional.
+
+| Arm | Grade | Duration | Cost | Turns |
+|---|---|---|---|---|
+| Baseline run 1 | wrong | 380 s | $0.070 | 7 |
+| Baseline run 2 | wrong | 299 s | $0.036 | 4 |
+| Treatment, cold cache | **correct** (exact top 3) | 169 s | $0.033 | 3 |
+| Treatment, warm cache | **correct** (exact top 3) | 7 s | $0.019 | 3 |
+
+- **Kill criterion not triggered:** the baseline was less correct and slower (1.8x to 2.2x slower than the cold treatment run, about 43x to 54x slower than the warm one) and no cheaper.
+- **Why the baseline was wrong:** it gave the same top 3 both times, which matches none of the registered readings and omits the largest SKU (document-basis revenue about 47,500). Its own caveats say it summed invoice line totals for every non-voided sale with an invoice, assumed line totals exclude tax without checking, and did not net credit notes. In this sandbox 67 of 173 sales are tax-inclusive (line totals include tax) and 24 authorised credit notes exist. The cause of the missing top SKU was not investigated.
+- **What the cache bought:** the first load (about 160 s here, 1.1 s per invoiced sale) is paid once; later questions take seconds. At production scale the first load grows linearly (about 18 min per 1,000 sales), which is why the default is a time window.
+- **Caveats:** two runs per cell; the same author wrote tools, question and truth; the baseline might do better with explicit definitions or more effort; the sandbox is small and synthetic; the warm figure assumes the cache directory persists between sessions.
+- **Consistency with the correction above:** on this document-basis question the cache-backed tool is correct, while the older list-rollup tools (`receivables_overdue`, `sales_summary`) understate on the revenue questions. Moving them onto the cache's document basis is the next follow-up.

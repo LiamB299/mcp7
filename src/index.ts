@@ -2,6 +2,7 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
+import { createFileStore } from './cache/store.js';
 import { createCin7Client } from './cin7/client.js';
 import { loadConfig } from './config.js';
 import { createServer } from './server.js';
@@ -14,7 +15,10 @@ try {
   if (existsSync(envFile)) process.loadEnvFile(envFile);
 
   const cin7 = createCin7Client(loadConfig());
-  serveStdio(() => createServer({ cin7 }), {
+  const cacheDir =
+    process.env.CIN7_CACHE_DIR ?? fileURLToPath(new URL('../.cache/cin7', import.meta.url));
+  const store = createFileStore(cacheDir);
+  serveStdio(() => createServer({ cin7, store }), {
     onerror: (e) => console.error('[cin7-core-mcp]', e.message),
   });
   console.error('[cin7-core-mcp] ready on stdio');

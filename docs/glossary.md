@@ -25,5 +25,8 @@ Seeded from general knowledge, refined against the API Blueprint 2026-11-05. Alp
 | **Allow-list shaping** | Building tool output from named safe fields instead of deleting known-sensitive ones, so new API fields are dropped by default (`src/shape.ts`). |
 | **Master status** | Cin7's rollup `Status` on a sale. Misleading for Advanced sales (can read ORDERED while shipped); we derive the stage from sub-statuses instead. |
 | **Stage (derived)** | Our workflow position for a sale (`awaiting_pick` ... `awaiting_payment`), computed in `src/stage.ts` from `Type` + `Combined*Status`. |
+| **Document basis** | Revenue computed from the invoice and credit-note documents (authorised or paid invoices minus authorised credit notes, ex-tax, by document date), as opposed to Cin7's list rollups (`InvoiceAmount` etc.), which disagree with documents on about 30% of sandbox sales. |
+| **Rollup drift** | Disagreement between a sale's list rollup (`InvoiceAmount`) and its documents; reported by `cache_status`. |
+| **Snapshot cache** | Local JSON snapshot of sale headers plus allow-listed invoice and credit-note lines (`src/cache/`); refreshed incrementally by per-sale `Updated`; gitignored. |
 | **StockOnHand** | In `/ref/productavailability` this is stock *value* (`OnHand x AverageCost`), not units. |
 | **Transport (MCP)** | Wire mechanism: stdio (local) or Streamable HTTP (remote). |

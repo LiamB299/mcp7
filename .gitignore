@@ -19,3 +19,6 @@ http/http-client.private.env.json
 
 # evaluation output (transcripts may hold customer data)
 eval/out/
+
+# local line-level cache (business names and order lines: never commit)
+.cache/

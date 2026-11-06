@@ -1,6 +1,6 @@
 # cin7-core-mcp
 
-A read-only [MCP](https://modelcontextprotocol.io) server that lets Claude Code answer business questions about a [Cin7 Core](https://www.cin7.com/) (formerly DEAR Inventory) account: overdue receivables, sales summaries, stock value and health, order status and the open-orders pipeline. Status: **MVP plus wave 2, sandbox only**.
+A read-only [MCP](https://modelcontextprotocol.io) server that lets Claude Code answer business questions about a [Cin7 Core](https://www.cin7.com/) (formerly DEAR Inventory) account: overdue receivables, sales summaries, stock value and health, order status and the open-orders pipeline. Status: **ten tools, line-level cache, sandbox only**; see [Project status and how to resume](#project-status-and-how-to-resume).
 
 ## The problem
 
@@ -21,31 +21,34 @@ Outcome-oriented tools, not an endpoint wrapper. Each tool answers a business qu
 flowchart LR
     CC["Claude Code"] -->|"stdio (MCP)"| S
     subgraph S["cin7-core-mcp"]
-        T["Report tools<br/>receivables_overdue, sales_summary,<br/>stock_position, connection_check"]
+        direction TB
+        T["Ten read-only tools<br/>reports, stock, orders, pipeline,<br/>sales_by_sku, cache_refresh, cache_status"]
+        Q["Shaping and stage logic<br/>allow-list PII shaper, stage from sub-statuses"]
+        CA[("Snapshot cache<br/>local JSON, gitignored")]
         H["list helper<br/>follows Total, all pages"]
         C["client<br/>serial pacing, 429/503 retry"]
+        T --> Q
+        T --> CA
+        CA -->|"changed sales only"| C
         T --> H --> C
     end
     C -->|"HTTPS /ExternalApi/v2"| E[("Cin7 Core")]
     ENV[".env (key stays server-side)"] -.-> C
 ```
 
-### Does it actually help? (evaluation, 2026-11-05)
+### Does it actually help? (three evaluation waves, 2026-11-05 to 2026-11-06)
 
-A/B test: Claude Code + Bash + the key (baseline) vs the same with this MCP, 5 in-scope questions, 2 runs each, answers graded against an independent ground-truth script.
+A/B test: Claude Code + Bash + the key (baseline) vs the same with this MCP. Questions, alternative readings and a kill criterion were pre-registered; ground truth is computed independently of `src/`; same model and permissions in both arms.
 
-| | Baseline | MCP |
-|---|---|---|
-| Correct | 8 / 10 | **10 / 10** |
-| Cost | 1.8x | 1x |
-| Time | 2.5x | 1x |
-| API key reachable by the model | yes | no |
+| Wave | Questions | Result | What it shows |
+|---|---|---|---|
+| 1 | Q1 to Q5, 20 runs | MCP 10/10, baseline 8/10; baseline 1.8x cost, 2.5x time | agreement with Cin7 list-rollup definitions (see the correction below) |
+| 2 | Q6 to Q10 plus regression, 30 runs | MCP 15/15, baseline 12/15; baseline 1.4x cost, 2.1x time | the Q6 gap is a definition ambiguity; the master-status trap did not separate the arms |
+| 3 | Q11 revenue by SKU on documents, 4 runs | MCP correct cold (169 s, first load) and warm (7 s); baseline wrong twice (299 s, 380 s) | the question that needs the whole sale-detail fan-out; first document-basis truth |
 
-Correctness here means agreement with Cin7's list-rollup definitions; against invoice and credit-note documents neither arm matched on the revenue questions (see the correction in [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md)). Savings are small in absolute terms (about a cent and a few seconds per question), the sample is small, and the same author wrote tools and questions. A narrow MCP also cannot answer questions outside its tools (the MCP arm declined an out-of-scope purchase-order question; the baseline queried the API). A second wave (7 tools, 30 runs) came out 15/15 vs 12/15 correct, baseline 1.4x cost and 2.1x time; part of the gap is a definition ambiguity rather than a hard error, and the master-status trap itself did not separate the arms. Full numbers and caveats: [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md); decisions in [ADR 0003](docs/adr/0003-read-only-reports-mvp.md) and [ADR 0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md).
+**Correction (merged in #15):** in waves 1 and 2, "correct" meant agreement with Cin7's list rollups (`InvoiceAmount` and friends), which differ from the invoice and credit-note documents on about 30% of sandbox sales. On documents neither arm matched Q1 (43 overdue sales versus 29), and on Q2 and Q3 the baseline was closer than the older tools. Those two tools (`receivables_overdue`, `sales_summary`) still read the list rollups and say so; moving them to the cache's document basis is the next planned step. Caveats: small samples, the same author wrote tools, questions and truth, the sandbox is small and synthetic, and a narrow MCP cannot answer questions outside its tools (the MCP arm declined an out-of-scope question; the baseline queried the API). Full numbers: [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md); decisions: [ADR 0003](docs/adr/0003-read-only-reports-mvp.md), [ADR 0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md), [ADR 0005](docs/adr/0005-line-level-snapshot-cache.md).
 
-A third wave asked for revenue by SKU on a document basis, a question that needs the whole sale-detail fan-out: the cache-backed tool was correct cold (169 s, first load) and warm (7 s); the baseline was wrong in both runs (299 s and 380 s). Details in `docs/research/mvp-evaluation.md` and [ADR 0005](docs/adr/0005-line-level-snapshot-cache.md).
-
-## Tools (all read-only)
+## Tools (read-only against Cin7; `cache_refresh` writes only the local cache file)
 
 | Tool | Inputs | Answers |
 |---|---|---|
@@ -65,7 +68,8 @@ Not built yet (prioritised in [`docs/research/prioritisation.md`](docs/research/
 ## Tech
 
 - **TypeScript** on Node 22+, ESM; official **MCP SDK v2** (`@modelcontextprotocol/server`), **Zod v4** schemas for tool input and output ([ADR 0002](docs/adr/0002-typescript-mcp-sdk-v2.md)).
-- **stdio** transport (local Claude Code); native `fetch` for Cin7; no database or cache yet.
+- **stdio** transport (local Claude Code); native `fetch` for Cin7; no database, but a local JSON snapshot cache for line-level data ([ADR 0005](docs/adr/0005-line-level-snapshot-cache.md)). Streamable HTTP is deferred (ADR 0002).
+- Decisions are recorded as ADRs: [0001](docs/adr/0001-record-architecture-decisions.md) process, [0002](docs/adr/0002-typescript-mcp-sdk-v2.md) stack, [0003](docs/adr/0003-read-only-reports-mvp.md) reports MVP, [0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md) PII shaping and stage derivation, [0005](docs/adr/0005-line-level-snapshot-cache.md) line-level cache.
 - Tooling: vitest (unit tests with synthetic fixtures), Biome (lint and format), `tsc`, npm.
 - Implementation of individual tools is delegated to Haiku agents and reviewed (see `CLAUDE.md`).
 
@@ -90,7 +94,7 @@ The server loads the repo-root `.env` itself (path resolved from the script, so 
   }
 }
 ```
-Debug with `npm run inspect`. Re-run the evaluation after changing tools: see [`eval/README.md`](eval/README.md) (about 24 headless Claude runs; real API spend).
+Debug with `npm run inspect`. Re-run the evaluation after changing tools: see [`eval/README.md`](eval/README.md). Runs are headless Claude sessions that cost real API money (a few cents each, dozens per wave) and the revenue-by-SKU truth script makes about 165 paced Cin7 calls: state the estimate and get approval first.
 
 ## Limitations
 
@@ -100,8 +104,34 @@ Debug with `npm run inspect`. Re-run the evaluation after changing tools: see [`
 - **Read-only.** Nothing writes to Cin7.
 - **Rate limit.** Requests are serialised at about 1 per 1.1 s; the key is shared with anyone else using it.
 
+## Project status and how to resume
+
+All pull requests through #16 are merged; `master` is green (typecheck, lint, 194 tests, build). Ten tools, the snapshot cache, the evaluation harness (`eval/`, 11 pre-registered questions) and five ADRs exist. ADRs 0003, 0004 and 0005 are accepted provisionally, each with a "Progress and where to continue" section listing its gaps.
+
+**Next, in order:** (1) move `receivables_overdue` and `sales_summary` onto the cache's document basis and re-evaluate against a document-based truth; (2) sales velocity and reorder suggestions on the cache; (3) explanations for negative stock; later, workflow writes (needs explicit consent and a confirmation design). Open items, user actions and unverified claims are tracked in the handoff document: [`docs/handoff/2026-11-06-cin7-mcp-roadmap.md`](docs/handoff/2026-11-06-cin7-mcp-roadmap.md) (index: [`docs/handoff/README.md`](docs/handoff/README.md)).
+
+**Rules of engagement** (details in `CLAUDE.md` and [`docs/workflow-guide.md`](docs/workflow-guide.md)):
+- Feature branch per change, one PR straight into `master`, no stacked PRs, commit and push; the maintainer reviews and merges.
+- Implementation work is delegated to Haiku subagents (at most five at once); the main model writes shared, privacy-critical code and reviews every diff.
+- The sandbox brief allows creating test data, but in practice writes are done only after asking (one throwaway sale was created and voided for the spike with explicit approval). Evaluation runs cost money and need approval.
+- No customer or supplier names, order numbers, SKU codes, GUIDs or credentials in the repo; raw API data and run transcripts stay in gitignored `eval/out/` or the scratch area.
+- Maintainer tooling outside the repo: the user-level `retire-chat` skill produces the handoff documents in `docs/handoff/` (it is not versioned here; see that folder's README).
+
+## Repository layout
+
+```
+src/            index (stdio entry), server (factory), config, dates, stage, shape
+  cin7/         HTTP client (pacing, retry), pagination helper, verified row types
+  cache/        snapshot cache: schema, extractor, store, sync, query, progress
+  tools/        one file per MCP tool
+test/           vitest, synthetic fixtures
+eval/           pre-registered A/B evaluation: questions, truth scripts, runner (output in eval/out, ignored)
+http/           read-only JetBrains HTTP Client requests for manual inspection
+docs/           research, ADRs, design sketches, glossary, workflow guide, handoff documents
+```
+
 ## Docs
 
-[`docs/README.md`](docs/README.md) indexes the research (Cin7 API reference, MCP landscape, user complaints, sandbox findings, prioritisation, evaluation), design sketches (mermaid), ADRs and glossary. [`CLAUDE.md`](CLAUDE.md) holds working conventions.
+[`docs/README.md`](docs/README.md) indexes the research (Cin7 API reference, MCP landscape, user complaints, sandbox findings, prioritisation, evaluation, line-cache spike), design sketches (mermaid), ADRs and glossary. [`docs/workflow-guide.md`](docs/workflow-guide.md) explains how we work with Claude Code. [`CLAUDE.md`](CLAUDE.md) holds working conventions. [`docs/handoff/`](docs/handoff/README.md) holds the dated handoff documents.
 
 Licensed under Apache-2.0.

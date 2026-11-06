@@ -34,3 +34,11 @@ Pre-registered in `eval/questions.json` and `eval/README.md`: six questions (one
 
 ## Evaluation result (2026-11-05)
 In-scope questions: MCP 10/10 correct vs baseline 8/10; baseline cost 1.8x and time 2.5x the MCP's. Kill criterion not triggered. Absolute savings are small (cents, seconds); the clearest advantage is agreement with a stated definition on definition traps and speed. Out-of-scope questions get no answer from a narrow MCP, so tool coverage matters. Details and caveats in [mvp-evaluation.md](../research/mvp-evaluation.md).
+
+<!-- retire-chat:progress:start -->
+## Progress and where to continue (as of 2026-11-06)
+
+Built, evaluated in three waves, and corrected in #15: the original "correct" grade meant agreement with Cin7 list rollups, not with the invoice and credit-note documents (Q1: 43 overdue sales on documents versus 29 from the rollup; Q2 API channel 14,938 versus 10,349 or 16,088; Q3 top customer 54,625 versus 24,756). Gap verified in code: `receivables_overdue` and `sales_summary` still read the list rollups `InvoiceAmount` and `PaidAmount`; their descriptions now say so. Next: rebuild both on the cache document basis (`src/cache/query.ts` plus sync), rewrite the Q1 to Q3 truth from documents, re-run the evaluation (paid runs: ask first), then finalise acceptance or amend the ADR.
+
+Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-06-cin7-mcp-roadmap.md`.
+<!-- retire-chat:progress:end -->

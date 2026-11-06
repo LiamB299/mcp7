@@ -18,7 +18,13 @@ Build option 3:
 - Refresh by `saleList?UpdatedSince=<last sync>`, details only for changed or new sales; periodic and on-demand full reconcile.
 - Default window (for example the last 90 days, tunable); full history opt-in; first-load estimate stated in the reply.
 - Warm on demand in the tool call with progress notifications; a `cache_status` tool; every answer carries "data as of" and its basis.
-- **Revenue** = authorised or paid invoice lines minus authorised credit-note lines, tax-exclusive; **margin** = line `AverageCost` x `Quantity` (not `COGSAmount`); additional charges reported separately.
+- **Revenue** = authorised or paid invoice lines minus authorised credit-note lines, **excluding tax**, attributed to the **invoice or credit-note date** (not the order date). Line `Total` is ex-tax when the sale's `TaxCalculation` is Exclusive but **tax-inclusive when Inclusive** (verified: invoice `TotalBeforeTax` equals the line sum on all 54 exclusive no-charge invoices and equals the line sum minus line `Tax` on all 58 inclusive ones), so ex-tax line revenue = `Total` minus (`Tax` when Inclusive).
+- **Margin** = ex-tax revenue minus line `AverageCost` x `Quantity` (not `COGSAmount`, which is set on only 35 of 162 invoiced sales).
+- **Additional charges** (freight and similar, 38 invoiced sales) are not lines and are reported separately.
+- **Currency:** 39 of 173 sandbox sales have a customer currency other than the base currency, all at a conversion rate of 1.0, so amounts are summed as stored; each sale keeps its currency and rate, and report tools state how many contributing sales were non-base.
+- **Cache keys and time:** per-sale `Updated` from the header list is the version key (fraction digits vary from 2 to 4, so it is parsed, not string-compared); the sync cursor is the maximum server `Updated` seen, not the local clock; documents seen include the header `InvoiceDate`.
+- **Partial data is labelled:** report tools return `complete: false` and coverage whenever the window is not fully loaded, and never present partial totals as final.
+- **Concurrency:** two Claude sessions must not sync at once (pacing is per process): a lock file with a stale timeout guards the snapshot, and the snapshot is written atomically.
 
 ## Consequences
 - Line-level tools (revenue and margin by SKU, velocity, explained negatives) become a few seconds after the first load; the first load is minutes and scales linearly (about 18 min per 1,000 sales).

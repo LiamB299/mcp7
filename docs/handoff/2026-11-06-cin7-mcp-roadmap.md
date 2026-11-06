@@ -28,6 +28,7 @@ Read in this order: this section, section 7 (open-work register, ordered for the
 | #14 | MERGED | docs/line-cache-spike to master | Line-cache spike: measured cost and verdicts, ADR 0005 proposed. |
 | #15 | MERGED | fix/list-basis-wording to master | States the list-rollup basis in tools and corrects the evaluation claims (merged last, after #16). |
 | #16 | MERGED | feat/line-cache to master | Line-level snapshot cache and tools `sales_by_sku`, `cache_refresh`, `cache_status`; ADR 0005 accepted provisionally. |
+| #17 | OPEN | docs/handoff-2026-11-06 to master | This handoff: verified handoff document, ADR progress sections, README and CLAUDE.md fixes, docs index, workflow-guide rows. |
 
 - **Branches (remote):** 13 of 14 are merged into master and none is needed; the exception is described below. Local branches mirror them.
 
@@ -236,6 +237,6 @@ Ordered for the stated focus first, then everything else.
 `retire-chat` (again, at the end of that session); `superpowers:brainstorming` or plan mode before building; `low-effort-plan` or `adversarial-plan-implement` for the Haiku-delegated implementation (maximum five agents); `superpowers:verification-before-completion` before claiming done; the `advisor` tool at the gates; `caveman` for replies. MCP Inspector (`npm run inspect`) for tool debugging.
 
 ## 10. Completeness check
-- **verify.mjs:** `node ~/.claude/skills/retire-chat/scripts/verify.mjs docs/handoff/2026-11-06-cin7-mcp-roadmap.md --repo . --readme README.md --secrets .env,eval/out/truth.json,http/http-client.private.env.json --ledger-min 28 --register-min 24` result recorded at ship time (ADRs and their commits and PRs, every PR, tool, module, evaluation question, research file and remote branch, ledger and register structure, placeholders, GUID/email/token scan, literal values from the three secrets files, README tool and ADR coverage). It does not check conversation-only state.
+- **verify.mjs:** `node ~/.claude/skills/retire-chat/scripts/verify.mjs docs/handoff/2026-11-06-cin7-mcp-roadmap.md --repo . --readme README.md --secrets .env,eval/out/truth.json,http/http-client.private.env.json --ledger-min 28 --register-min 24` exits 0 with 395 checks passed (ADRs and their commits and PRs, every PR, tool, module, evaluation question, research file and remote branch, ledger and register structure, placeholders, GUID/email/token scan, literal values from the three secrets files, README tool and ADR coverage). It does not check conversation-only state.
 - **Reviewer outcome:** the advisor reviewed the transcript against this document and listed blocking omissions: a memory file still teaching stacked PRs, stale branch counts, the verifier failing on its own branch, consent and attribution wording, local-only files outside the listed paths, and the skill-test evidence. All were fixed and are reflected above; it confirmed the ledger (U1 to U28) and the rest of the layer-(c) list were complete.
 - **Known gaps:** the scratchpad scripts are not preserved; the skill itself is unversioned (R24); items needing the user are R14 to R19; the verifier cannot detect conversation-only facts that nobody wrote down.

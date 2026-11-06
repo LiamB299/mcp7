@@ -18,3 +18,11 @@ Option 1. Node >=22, ESM, `tsc` build, `tsx` dev, vitest, Biome, npm. Native `fe
 - v2 API differs from v1 examples online: use the installed package's d.ts/README (`McpServer.registerTool` with `z.object` schemas, `InMemoryTransport.createLinkedPair()` for tests, `inputRequired` for multi-round-trip elicitation).
 - `@types/node` + `"types": ["node"]` required (SDK d.ts references `Buffer`).
 - `src/cin7/client.ts` is the single upstream choke point where rate limiting (60/min/key), retry and caching will live.
+
+<!-- retire-chat:progress:start -->
+## Progress and where to continue (as of 2026-11-06)
+
+Built and in daily use; 194 tests pass. Gap: Streamable HTTP (remote or multi-user use, authorization) is not implemented and no adapter is imported anywhere in `src/`. Next: only if remote use is wanted, write a new ADR for HTTP transport and auth (SDK adapters exist for Node, Hono and Express); otherwise nothing.
+
+Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-06-cin7-mcp-roadmap.md`.
+<!-- retire-chat:progress:end -->

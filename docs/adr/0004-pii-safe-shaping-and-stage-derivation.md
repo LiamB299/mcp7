@@ -22,3 +22,11 @@ Live gate against independent truth (re-implemented from raw sub-statuses in `ev
 - Stage names are our vocabulary, documented in the glossary; they must be revisited if Cin7 adds sub-statuses.
 - Aggregate tools still return customer business names (for example in candidate lists); revisit if the server is used beyond a sandbox.
 - No global response-size budget yet; each tool bounds its own output.
+
+<!-- retire-chat:progress:start -->
+## Progress and where to continue (as of 2026-11-06)
+
+Built and live-verified against independent truth (52 unpicked, 31 packed not shipped, 65 purchases awaiting receipt, 9 negative-stock products, 9 at or below reorder point). Gaps verified in code and evaluation: the evaluation did not measure personal-data protection (only unit tests and the live gate do); aggregate tools still return customer business names (`receivables_overdue`, `sales_summary` by customer, `order_lookup` candidates); there is no global response-size budget; the master-status trap did not separate the arms, so the normaliser value is verified but not demonstrated by the evaluation. Next: add a reliable PII-exposure measure to the evaluation, decide whether business names may leave the service layer, add per-tool output caps, and revisit stage names if Cin7 adds sub-statuses.
+
+Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-06-cin7-mcp-roadmap.md`.
+<!-- retire-chat:progress:end -->

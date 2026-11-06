@@ -36,3 +36,11 @@ Built as `src/cache/` (schema, allow-list extractor, atomic locked store, resuma
 - Existing tools using list rollups should state their basis; a document-based basis becomes available with the cache.
 - Production size is unknown: the window default and estimate message protect against surprise.
 - Follow-on evaluation: "revenue by SKU", where the baseline must fan out by itself.
+
+<!-- retire-chat:progress:start -->
+## Progress and where to continue (as of 2026-11-06)
+
+Built and verified (live gate: cold load 162.7 s for 147 invoiced sales, lock refusal in 3 ms, warm status 6 ms, no-change refresh 1 Cin7 call, exact SKU top 3 against independent document-basis truth; evaluation Q11 correct cold and warm, baseline wrong twice). Gaps versus the ADR, verified in code: (1) the "about daily" full reconcile is not scheduled, only on demand via `cache_refresh` with `full`, and `src` contains no timer or scheduler; (2) the ADR says the cache should be deletable by a tool, but there is no cache-clear tool or function; (3) `cache_refresh` defaults to a 90-day window but `sales_by_sku` with no `from` loads all history (windowDays null), a deliberate choice for all-time questions that differs from the ADR default; (4) only create, order draft, order authorised and void were shown to bump `Updated`, pick, pack, ship, invoice and payment are untested; (5) interactive Claude Code timeouts are unverified (headless survived 90, 240 and 700 s); (6) production scale is unknown (first load is about 18 minutes per 1,000 sales); (7) velocity, reorder and negative-stock explanations are not built on the cache. Next: add a reconcile cadence or document the manual one, add a cache-clear tool, amend the ADR on the `from` default, probe the untested stage bumps (needs fresh write consent), test interactive timeouts, then build velocity and explanations.
+
+Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-06-cin7-mcp-roadmap.md`.
+<!-- retire-chat:progress:end -->

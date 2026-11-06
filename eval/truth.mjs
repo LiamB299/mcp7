@@ -33,12 +33,12 @@ const purchases = await all('purchaseList', 'PurchaseList');
 const products = await all('product', 'Products');
 const allSales = await all('saleList', 'SaleList');
 
-// Q1 overdue: net invoiced (InvoiceAmount, net of credit notes) minus paid > 0 and due date < asOf.
+// Q1 overdue: list-rollup invoiced amount (InvoiceAmount; Cin7 documents it as net of credit notes, the sandbox shows it differs from document totals on about 30% of sales) minus paid > 0 and due date < asOf.
 const q1 = (amountOf) => {
   const od = sales.filter((s) => amountOf(s) - s.PaidAmount > 0.005 && s.InvoiceDueDate && s.InvoiceDueDate.slice(0, 10) < ASOF);
   return { count: od.length, total: r2(od.reduce((a, s) => a + amountOf(s) - s.PaidAmount, 0)) };
 };
-// Q2 revenue by channel: OrderDate in range, sum InvoiceAmount (net of credit notes).
+// Q2 revenue by channel: OrderDate in range, sum the list rollup InvoiceAmount (see note on Q1).
 const q2 = (amountOf) => {
   const out = {};
   for (const s of sales) {
@@ -85,8 +85,8 @@ if (pick) {
 }
 const truth = {
   asOf: ASOF, calls, salesNonVoided: sales.length,
-  Q1: { primary: q1((s) => s.InvoiceAmount), altGrossInvoices: q1((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'outstanding = InvoiceAmount (net of credit notes) - PaidAmount > 0; due date < asOf; non-voided' },
-  Q2: { primary: q2((s) => s.InvoiceAmount), altGrossInvoices: q2((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'OrderDate within range, non-voided, sum InvoiceAmount (net of credit notes)' },
+  Q1: { primary: q1((s) => s.InvoiceAmount), altGrossInvoices: q1((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'outstanding = list rollup InvoiceAmount - PaidAmount > 0; due date < asOf; non-voided' },
+  Q2: { primary: q2((s) => s.InvoiceAmount), altGrossInvoices: q2((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'OrderDate within range, non-voided, sum list rollup InvoiceAmount' },
   Q3: { primary: q3((s) => s.InvoiceAmount), altGrossInvoices: q3((s) => s.SaleInvoicesTotalAmount ?? s.InvoiceAmount), definition: 'grouped by CustomerID, sum InvoiceAmount (net), non-voided, all dates' },
   Q4: { totalValue: r2(locs.reduce((a, [, v]) => a + v, 0)), topLocationShare: r2(locs[0][1] / locs.reduce((a, [, v]) => a + v, 0)), topLocation: locs[0][0], topLocationValue: r2(locs[0][1]), altIfUnitsMisread: r2(avail.reduce((a, r) => a + r.OnHand, 0)), definition: 'StockOnHand is a value (OnHand x AverageCost), summed over all availability rows' },
   Q5: { products: [...av.values()].filter((v) => v < 0).length, definition: 'distinct product IDs whose summed Available across rows is < 0' },

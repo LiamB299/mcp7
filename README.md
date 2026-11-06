@@ -8,7 +8,7 @@ Cin7 Core's REST API is a record store, not a reporting API. Getting an answer o
 
 - **No aggregate or reporting endpoints.** Totals, margins, valuation and "what is overdue" must be computed client-side.
 - **List endpoints return headers only.** Line-level questions need one detail call per record, under a limit of **60 calls/min per key** (173 sales is about 3 minutes; larger accounts far more).
-- **Definition traps** that give plausible but wrong numbers: `InvoiceAmount` is *net of credit notes*, `StockOnHand` is a *value* not a unit count, paging defaults to 100 rows, Advanced and Simple sales roll their statuses up differently, "today" depends on the tenant time zone.
+- **Definition traps** that give plausible but wrong numbers: the list rollups (`InvoiceAmount`, documented as net of credit notes) can disagree with the invoice and credit-note documents (about 30% of sandbox sales), `StockOnHand` is a *value* not a unit count, paging defaults to 100 rows, Advanced and Simple sales roll their statuses up differently, "today" depends on the tenant time zone.
 - **Reporting limits are a recurring ERP complaint** (see [`docs/research/user-complaints.md`](docs/research/user-complaints.md)).
 
 A capable Claude Code session can already call the API with Bash and the key, but it re-derives these rules each time, sometimes gets them wrong, and needs the API key in its environment.
@@ -41,7 +41,7 @@ A/B test: Claude Code + Bash + the key (baseline) vs the same with this MCP, 5 i
 | Time | 2.5x | 1x |
 | API key reachable by the model | yes | no |
 
-The baseline's misses were the gross-vs-net invoice trap. Savings are small in absolute terms (about a cent and a few seconds per question), the sample is small, and the same author wrote tools and questions. A narrow MCP also cannot answer questions outside its tools (the MCP arm declined an out-of-scope purchase-order question; the baseline queried the API). A second wave (7 tools, 30 runs) came out 15/15 vs 12/15 correct, baseline 1.4x cost and 2.1x time; part of the gap is a definition ambiguity rather than a hard error, and the master-status trap itself did not separate the arms. Full numbers and caveats: [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md); decisions in [ADR 0003](docs/adr/0003-read-only-reports-mvp.md) and [ADR 0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md).
+Correctness here means agreement with Cin7's list-rollup definitions; against invoice and credit-note documents neither arm matched on the revenue questions (see the correction in [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md)). Savings are small in absolute terms (about a cent and a few seconds per question), the sample is small, and the same author wrote tools and questions. A narrow MCP also cannot answer questions outside its tools (the MCP arm declined an out-of-scope purchase-order question; the baseline queried the API). A second wave (7 tools, 30 runs) came out 15/15 vs 12/15 correct, baseline 1.4x cost and 2.1x time; part of the gap is a definition ambiguity rather than a hard error, and the master-status trap itself did not separate the arms. Full numbers and caveats: [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md); decisions in [ADR 0003](docs/adr/0003-read-only-reports-mvp.md) and [ADR 0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md).
 
 ## Tools (all read-only)
 
@@ -49,7 +49,7 @@ The baseline's misses were the gross-vs-net invoice trap. Savings are small in a
 |---|---|---|
 | `cin7_connection_check` | none | Credentials work; company, currency, time zone |
 | `receivables_overdue` | `asOf?` (yyyy-MM-dd, default today in tenant zone), `topN?` | Outstanding and overdue invoice balances, age buckets (1-30, 31-60, 61-90, 90+), largest overdue balances |
-| `sales_summary` | `groupBy` (`month` / `channel` / `customer`), `from?`, `to?`, `topN?` | Invoiced revenue and sale counts, net of credit notes, voided sales excluded; omit dates for all time |
+| `sales_summary` | `groupBy` (`month` / `channel` / `customer`), `from?`, `to?`, `topN?` | Invoiced revenue and sale counts from Cin7's list rollup (`InvoiceAmount`), voided sales excluded; omit dates for all time |
 | `stock_position` | `location?`, `topN?` | Stock value and units by location, top products by value, count of negative-available stock |
 | `order_lookup` | `orderNumber` | One sale by exact order number: stage (from sub-statuses), capped lines, fulfilment, invoices. **Personal contact data is dropped** (allow-list shaping) |
 | `open_orders_pipeline` | `includePurchases?` | Open sales by workflow stage, stuck counts (awaiting pick / ship / invoice / payment), purchase orders awaiting receipt, and how many sales the master status misdescribes |

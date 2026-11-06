@@ -139,3 +139,20 @@ Four runs, sequential, same protocol: baseline twice; treatment with a fresh cac
 - **What the cache bought:** the first load (about 160 s here, 1.1 s per invoiced sale) is paid once; later questions take seconds. At production scale the first load grows linearly (about 18 min per 1,000 sales), which is why the default is a time window.
 - **Caveats:** two runs per cell; the same author wrote tools, question and truth; the baseline might do better with explicit definitions or more effort; the sandbox is small and synthetic; the warm figure assumes the cache directory persists between sessions.
 - **Consistency with the correction above:** on this document-basis question the cache-backed tool is correct, while the older list-rollup tools (`receivables_overdue`, `sales_summary`) understate on the revenue questions. They were moved onto the cache's document basis on 2026-11-06 ([ADR 0006](../adr/0006-document-basis-reports.md)); the live gate matched the document-basis figures above (43 overdue sales, API 14,938 inc-tax, top customer 54,625). Re-evaluating Q1 to Q3 with `eval/truth-docs.mjs` is still to do.
+
+# Wave 4 evaluation (2026-11-06): Q1 to Q3 re-graded on the document basis
+
+After ADR 0006 the Q1 to Q3 treatment tools read documents. `eval/truth-docs.mjs` (independent of `src/`, 165 paced read-only calls) gave the truth: Q1 43 overdue sales, 83,735.44 (86,610.44 without credit netting, 29 / 26,447 on the list rollup); Q2 ex-tax API 14,195.12 (inc-tax 14,937.56, list rollup 10,349); Q3 top three 54,625, 22,345.60, 20,774.54 inc-tax (ex-tax 47,500; list rollup 24,755.60 first). These match the tools' own live-gate figures exactly. Gradings were pre-registered in `eval/run.mjs` before the run: Q1 primary netted of credit notes; Q2 primary ex-tax with inc-tax, document-date and list-rollup as separate labelled readings; Q3 primary tax-inclusive billed with ex-tax and list-rollup as separate readings.
+
+One run per arm (sonnet, budget cap 0.6 US dollars per run, treatment cache fresh per question, so every treatment run is cold):
+
+| Question | Baseline (Bash + key) | Treatment (MCP) |
+|---|---|---|
+| Q1 overdue receivables | wrong (365 s, 0.10 USD) | correct (169 s, 0.03 USD) |
+| Q2 revenue by channel | wrong (15 s, 0.04 USD) | correct (104 s, 0.03 USD) |
+| Q3 top customers | alt-list-rollup (15 s, 0.03 USD) | correct (169 s, 0.03 USD) |
+
+- **Correctness:** treatment 3 of 3 correct; baseline 0 of 3 (two wrong, one on the list-rollup reading). Total spend about 0.28 US dollars notional.
+- **Cost and time:** the treatment was cheaper overall (0.10 against 0.18 USD) but **not faster** on Q2 and Q3: each treatment run paid a cold cache load (100 to 170 s), while the baseline answered in 15 s from list rollups, wrongly. Only on Q1 was the baseline slower. A warm cache would answer in seconds (see wave 3).
+- **Key exposure:** key string in no transcript.
+- **Caveats:** n = 1 per cell, so this is a sanity check, not a measurement; same author wrote tools, questions and truth; the Q2 and Q3 tax readings were chosen by us (the wording does not fix them); the baseline was not given definitions. Reruns need the maintainer's approval.

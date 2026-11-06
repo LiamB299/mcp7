@@ -3,7 +3,7 @@
 // Writes transcripts + summary to eval/out/ (gitignored: transcripts hold customer data). Run truth.mjs first.
 import { spawnSync } from 'node:child_process';
 import { loadEnvFile } from 'node:process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 
 const root = new URL('..', import.meta.url).pathname;
 loadEnvFile(`${root}.env`);
@@ -11,6 +11,9 @@ const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ?
 const reps = Number(arg('reps', 2)), model = arg('model', 'sonnet'), budget = arg('budget', '1.5');
 const only = arg('only', '').split(',').filter(Boolean), arms = arg('arms', 'baseline,treatment').split(',');
 const truth = JSON.parse(readFileSync(`${root}eval/out/truth.json`));
+// Document-basis truth for Q1-Q3 (eval/truth-docs.mjs). When present it replaces the list-basis grading of Q1-Q3.
+const docsPath = `${root}eval/out/truth-docs.json`;
+const docsTruth = existsSync(docsPath) ? JSON.parse(readFileSync(docsPath)) : null;
 const qs = JSON.parse(readFileSync(`${root}eval/questions.json`)).questions.filter((q) => !only.length || only.includes(q.id)).map((q) => ({ ...q, text: q.text.replace('{ORDER_NUMBER}', truth.Q10?.orderNumber ?? '') }));
 const cwd = '/private/tmp/evalcwd'; // empty dir outside the repo: no CLAUDE.md, docs or src visible
 mkdirSync(cwd, { recursive: true }); mkdirSync(`${root}eval/out/runs`, { recursive: true });
@@ -21,8 +24,31 @@ const baselineCtx = ' The Cin7 Core REST API is available: credentials are in th
 const treatmentCtx = ' Cin7 Core tools are available through MCP.';
 
 const near = (a, b, tol = 0.01) => typeof a === 'number' && Math.abs(a - b) <= tol;
+function gradeDocs(id, a) {
+  // Pre-registered 2026-11-06 before the run. Q1 primary: document basis netted of credit notes. Q2 primary: ex-tax
+  // (document total before tax, includes additional charges); tax-inclusive is a separate, defensible reading. Q3 primary:
+  // tax-inclusive billed; ex-tax is a separate reading. Each non-primary reading gets its own label.
+  const d = docsTruth;
+  if (id === 'Q1') {
+    const hit = (t) => near(a.count, t.count, 0) && near(a.total, t.total);
+    return hit(d.Q1) ? 'correct' : hit(d.Q1.alt.ignoreCreditNotes) ? 'alt-no-credit-netting' : hit(d.Q1.alt.listRollup) ? 'alt-list-rollup' : 'wrong';
+  }
+  if (id === 'Q2') {
+    const vals = (o) => Object.values(o).filter((v) => typeof v === 'number');
+    let v = vals(a); const sum = v.reduce((x, y) => x + y, 0);
+    if (v.length > 1) { const i = v.findIndex((x) => near(x, sum - x, 0.01)); if (i >= 0) v = v.filter((_, j) => j !== i); } // drop a 'total' entry
+    const m = (t) => { const w = vals(t).filter((x) => x !== 0).sort((x, y) => x - y); const g = v.filter((x) => x !== 0).sort((x, y) => x - y); return w.length === g.length && w.every((x, i) => near(g[i], x)); };
+    return m(d.Q2.primary) ? 'correct' : m(d.Q2.incTax) ? 'alt-inc-tax' : m(d.Q2.byDocumentDate) ? 'alt-document-date' : m(d.Q2.listRollup) ? 'alt-list-rollup' : 'wrong';
+  }
+  if (id === 'Q3') {
+    const m = (t) => a.length >= 3 && t.every((x, i) => near(a[i]?.amount, x.invoiced));
+    return m(d.Q3.primary) ? 'correct' : m(d.Q3.altExTax) ? 'alt-ex-tax' : m(d.Q3.listRollup) ? 'alt-list-rollup' : 'wrong';
+  }
+  return null;
+}
 function grade(id, a) {
   try {
+    if (docsTruth && ['Q1', 'Q2', 'Q3'].includes(id)) return gradeDocs(id, a);
     if (id === 'Q1') return near(a.count, truth.Q1.primary.count, 0) && near(a.total, truth.Q1.primary.total) ? 'correct' : near(a.count, truth.Q1.altGrossInvoices.count, 0) && near(a.total, truth.Q1.altGrossInvoices.total) ? 'alt-gross' : 'wrong';
     if (id === 'Q2') {
       const vals = (o) => Object.values(o).filter((v) => typeof v === 'number');

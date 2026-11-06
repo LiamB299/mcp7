@@ -1,6 +1,6 @@
 # ADR 0005: Line-level snapshot cache (persistent, windowed, incremental)
 
-- **Status:** proposed (measured by the [line-cache spike](../research/line-cache-spike.md); needs the user's go-ahead before building)
+- **Status:** accepted, provisional (measured by the [line-cache spike](../research/line-cache-spike.md); built and verified 2026-11-06, see "Build and verification")
 - **Date:** 2026-11-05
 
 ## Context
@@ -25,6 +25,9 @@ Build option 3:
 - **Cache keys and time:** per-sale `Updated` from the header list is the version key (fraction digits vary from 2 to 4, so it is parsed, not string-compared); the sync cursor is the maximum server `Updated` seen, not the local clock; documents seen include the header `InvoiceDate`.
 - **Partial data is labelled:** report tools return `complete: false` and coverage whenever the window is not fully loaded, and never present partial totals as final.
 - **Concurrency:** two Claude sessions must not sync at once (pacing is per process): a lock file with a stale timeout guards the snapshot, and the snapshot is written atomically.
+
+## Build and verification (2026-11-06)
+Built as `src/cache/` (schema, allow-list extractor, atomic locked store, resumable sync, pure query) plus tools `sales_by_sku`, `cache_refresh`, `cache_status`. Live gate against the sandbox with a fresh cache directory: cold load 162.7 s for 147 invoiced sales; a second process was refused by the lock in 3 ms mid-load while status reads kept working; 147 progress notifications delivered; warm `cache_status` in 6 ms; a no-change refresh makes 1 Cin7 call (the list) and fetches 0 details; warm `sales_by_sku` in 579 ms; the top 3 SKUs match an independent document-basis truth exactly; the rollup-drift summary reproduces the spike's split (49 of 147 differ: 18 credit notes not netted, 10 zero despite an invoice, 21 other). Evaluation wave 3 (Q11): treatment correct cold and warm, baseline wrong in both runs; see [mvp-evaluation.md](../research/mvp-evaluation.md). 194 unit tests cover cold load, no-change refresh, changed, newly invoiced and voided sales, budget stop and resume, error and resume, lock contention, window edges and widening, allow-list privacy and tax-inclusive handling.
 
 ## Consequences
 - Line-level tools (revenue and margin by SKU, velocity, explained negatives) become a few seconds after the first load; the first load is minutes and scales linearly (about 18 min per 1,000 sales).

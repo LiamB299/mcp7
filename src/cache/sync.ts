@@ -97,11 +97,13 @@ export async function syncSnapshot(
     const snap: Snapshot =
       (await deps.store.load()) ?? emptySnapshot(new Date(started).toISOString());
     // The tenant time zone (one /me call) is only needed to compute a date window.
+    const hadSnapshot = snap.lastSyncAt !== null;
+    // A snapshot that already covers all history is unaffected by any narrower request: skip the lookup.
+    const coversAll = hadSnapshot && snap.windowFrom === null;
     const requestedFrom =
-      windowDays === null
+      windowDays === null || coversAll
         ? null
         : subtractDays(options.asOf ?? (await resolveAsOf(cin7)), windowDays);
-    const hadSnapshot = snap.lastSyncAt !== null;
     const effectiveFrom = hadSnapshot ? minFrom(snap.windowFrom, requestedFrom) : requestedFrom;
     const widened = hadSnapshot && effectiveFrom !== snap.windowFrom;
     const full = Boolean(options.full) || !hadSnapshot || snap.cursorMs === null || widened;

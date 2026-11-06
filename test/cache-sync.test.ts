@@ -292,6 +292,16 @@ describe('syncSnapshot', () => {
     expect((await store.load())!.windowFrom).toBeNull();
   });
 
+  it('a snapshot covering all history needs no time-zone lookup for a windowed refresh', async () => {
+    const api = fakeApi(sales());
+    const store = createMemoryStore();
+    await syncSnapshot({ cin7: api.client, store }, base({ windowDays: null }));
+    api.log.length = 0;
+    const r = await syncSnapshot({ cin7: api.client, store }, { windowDays: 30 }); // no asOf given
+    expect(r.cin7Calls).toBe(1); // just the incremental list; no /me
+    expect(api.log).not.toContain('me');
+  });
+
   it('a narrower later request never shrinks coverage', async () => {
     const api = fakeApi(sales());
     const store = createMemoryStore();

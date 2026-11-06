@@ -24,6 +24,8 @@ export interface SaleListRow {
   CombinedPaymentStatus?: Str;
   FulFilmentStatus?: Str;
   OrderDate?: Str;
+  InvoiceDate?: Str;
+  CustomerCurrency?: Str;
   ShipBy?: Str;
   SourceChannel?: Str;
   /** Net of credit notes. */

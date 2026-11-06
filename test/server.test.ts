@@ -1,13 +1,17 @@
 import { Client } from '@modelcontextprotocol/client';
 import { InMemoryTransport } from '@modelcontextprotocol/server';
 import { describe, expect, it } from 'vitest';
+import { createMemoryStore } from '../src/cache/store.js';
 import { createCin7Client } from '../src/cin7/client.js';
 import { createServer } from '../src/server.js';
 
 const config = { accountId: 'acc', applicationKey: 'key', baseUrl: 'https://example.test/v2/' };
 
 async function connect(fetchImpl: typeof fetch) {
-  const server = createServer({ cin7: createCin7Client(config, fetchImpl, { minIntervalMs: 0 }) });
+  const server = createServer({
+    cin7: createCin7Client(config, fetchImpl, { minIntervalMs: 0 }),
+    store: createMemoryStore(),
+  });
   const client = new Client({ name: 'test', version: '0.0.0' });
   const [a, b] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(a), client.connect(b)]);

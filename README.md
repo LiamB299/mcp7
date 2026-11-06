@@ -43,6 +43,8 @@ A/B test: Claude Code + Bash + the key (baseline) vs the same with this MCP, 5 i
 
 Correctness here means agreement with Cin7's list-rollup definitions; against invoice and credit-note documents neither arm matched on the revenue questions (see the correction in [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md)). Savings are small in absolute terms (about a cent and a few seconds per question), the sample is small, and the same author wrote tools and questions. A narrow MCP also cannot answer questions outside its tools (the MCP arm declined an out-of-scope purchase-order question; the baseline queried the API). A second wave (7 tools, 30 runs) came out 15/15 vs 12/15 correct, baseline 1.4x cost and 2.1x time; part of the gap is a definition ambiguity rather than a hard error, and the master-status trap itself did not separate the arms. Full numbers and caveats: [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md); decisions in [ADR 0003](docs/adr/0003-read-only-reports-mvp.md) and [ADR 0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md).
 
+A third wave asked for revenue by SKU on a document basis, a question that needs the whole sale-detail fan-out: the cache-backed tool was correct cold (169 s, first load) and warm (7 s); the baseline was wrong in both runs (299 s and 380 s). Details in `docs/research/mvp-evaluation.md` and [ADR 0005](docs/adr/0005-line-level-snapshot-cache.md).
+
 ## Tools (all read-only)
 
 | Tool | Inputs | Answers |
@@ -54,8 +56,11 @@ Correctness here means agreement with Cin7's list-rollup definitions; against in
 | `order_lookup` | `orderNumber` | One sale by exact order number: stage (from sub-statuses), capped lines, fulfilment, invoices. **Personal contact data is dropped** (allow-list shaping) |
 | `open_orders_pipeline` | `includePurchases?` | Open sales by workflow stage, stuck counts (awaiting pick / ship / invoice / payment), purchase orders awaiting receipt, and how many sales the master status misdescribes |
 | `stock_health` | `topN?`, `includeReorder?` | Negative available stock, on-order-with-nothing-on-hand, products at or below their reorder point, availability formula mismatches (reads the product list: about 2 large calls) |
+| `sales_by_sku` | `from?`, `to?`, `topN?`, `sortBy?`, `refresh?`, `maxMinutes?` | Revenue (ex-tax), quantity, cost and margin by SKU from the **line-level cache**, attributed by invoice or credit-note date. May warm the cache (about 1.1 s per invoiced sale); states coverage and returns `complete: false` while the window is not fully loaded |
+| `cache_refresh` | `windowDays?` (or `all`), `full?`, `maxMinutes?` | Loads or refreshes the local snapshot: lists headers, fetches details only for changed sales, resumable at a time budget, progress notifications |
+| `cache_status` | none | Local cache only (no Cin7 calls): size, last sync, window, pending details and a rollup-drift summary (Cin7 list totals vs invoice and credit-note documents) |
 
-Not built yet (prioritised in [`docs/research/prioritisation.md`](docs/research/prioritisation.md)): a line-level cache for SKU and margin reports, explanations for negative stock, and any write operations.
+Not built yet (prioritised in [`docs/research/prioritisation.md`](docs/research/prioritisation.md)): explanations for negative stock, sales velocity and reorder suggestions, and any write operations.
 
 ## Tech
 
@@ -73,7 +78,7 @@ npm run build
 npm test                # typecheck, lint: npm run typecheck && npm run lint
 ```
 
-The server loads the repo-root `.env` itself (path resolved from the script, so the launch directory does not matter) and appends `/v2` to `CIN7_BASE_URL`.
+The server loads the repo-root `.env` itself (path resolved from the script, so the launch directory does not matter) and appends `/v2` to `CIN7_BASE_URL`. Optional: `CIN7_CACHE_DIR` for the line-level cache location.
 
 ### Use with Claude Code
 `.mcp.json` registers the server for this repo. Project-scoped servers need a one-time approval: run `claude` in the repo and accept it (check with `claude mcp list`). For other clients:
@@ -91,7 +96,7 @@ Debug with `npm run inspect`. Re-run the evaluation after changing tools: see [`
 
 - **Sandbox only.** Built and tested against a Cin7 sandbox, which is small and synthetic. Production scale is untested.
 - **Personal data:** `order_lookup` uses allow-list shaping (no contact person, email, phone, addresses or free-text notes) and caps lines. Other tools return aggregates but can include customer business names. There is no global response-size budget yet.
-- **No cache.** Each call re-reads the lists (about 2-4 paced calls per tool today).
+- **Line-level cache (ADR 0005).** `sales_by_sku` reads a local snapshot under `.cache/cin7` (override with `CIN7_CACHE_DIR`; gitignored). It holds business names, order lines and money, no contact data. First load is about 1.1 s per invoiced sale (about 160 s for the sandbox's 147), then refreshes are incremental. Revenue is a **document basis** (authorised invoices minus credit notes, ex-tax, by document date), unlike the older tools' list rollups. Results are labelled partial until the window is fully loaded.
 - **Read-only.** Nothing writes to Cin7.
 - **Rate limit.** Requests are serialised at about 1 per 1.1 s; the key is shared with anyone else using it.
 

@@ -1,6 +1,6 @@
 # ADR 0005: Line-level snapshot cache (persistent, windowed, incremental)
 
-- **Status:** proposed (measured by the [line-cache spike](../research/line-cache-spike.md); needs the user's go-ahead before building)
+- **Status:** accepted, provisional (measured by the [line-cache spike](../research/line-cache-spike.md); built and verified 2026-11-06, see "Build and verification")
 - **Date:** 2026-11-05
 
 ## Context
@@ -18,7 +18,16 @@ Build option 3:
 - Refresh by `saleList?UpdatedSince=<last sync>`, details only for changed or new sales; periodic and on-demand full reconcile.
 - Default window (for example the last 90 days, tunable); full history opt-in; first-load estimate stated in the reply.
 - Warm on demand in the tool call with progress notifications; a `cache_status` tool; every answer carries "data as of" and its basis.
-- **Revenue** = authorised or paid invoice lines minus authorised credit-note lines, tax-exclusive; **margin** = line `AverageCost` x `Quantity` (not `COGSAmount`); additional charges reported separately.
+- **Revenue** = authorised or paid invoice lines minus authorised credit-note lines, **excluding tax**, attributed to the **invoice or credit-note date** (not the order date). Line `Total` is ex-tax when the sale's `TaxCalculation` is Exclusive but **tax-inclusive when Inclusive** (verified: invoice `TotalBeforeTax` equals the line sum on all 54 exclusive no-charge invoices and equals the line sum minus line `Tax` on all 58 inclusive ones), so ex-tax line revenue = `Total` minus (`Tax` when Inclusive).
+- **Margin** = ex-tax revenue minus line `AverageCost` x `Quantity` (not `COGSAmount`, which is set on only 35 of 162 invoiced sales).
+- **Additional charges** (freight and similar, 38 invoiced sales) are not lines and are reported separately.
+- **Currency:** 39 of 173 sandbox sales have a customer currency other than the base currency, all at a conversion rate of 1.0, so amounts are summed as stored; each sale keeps its currency and rate, and report tools state how many contributing sales were non-base.
+- **Cache keys and time:** per-sale `Updated` from the header list is the version key (fraction digits vary from 2 to 4, so it is parsed, not string-compared); the sync cursor is the maximum server `Updated` seen, not the local clock; documents seen include the header `InvoiceDate`.
+- **Partial data is labelled:** report tools return `complete: false` and coverage whenever the window is not fully loaded, and never present partial totals as final.
+- **Concurrency:** two Claude sessions must not sync at once (pacing is per process): a lock file with a stale timeout guards the snapshot, and the snapshot is written atomically.
+
+## Build and verification (2026-11-06)
+Built as `src/cache/` (schema, allow-list extractor, atomic locked store, resumable sync, pure query) plus tools `sales_by_sku`, `cache_refresh`, `cache_status`. Live gate against the sandbox with a fresh cache directory: cold load 162.7 s for 147 invoiced sales; a second process was refused by the lock in 3 ms mid-load while status reads kept working; 147 progress notifications delivered; warm `cache_status` in 6 ms; a no-change refresh makes 1 Cin7 call (the list) and fetches 0 details; warm `sales_by_sku` in 579 ms; the top 3 SKUs match an independent document-basis truth exactly; the rollup-drift summary reproduces the spike's split (49 of 147 differ: 18 credit notes not netted, 10 zero despite an invoice, 21 other). Evaluation wave 3 (Q11): treatment correct cold and warm, baseline wrong in both runs; see [mvp-evaluation.md](../research/mvp-evaluation.md). 194 unit tests cover cold load, no-change refresh, changed, newly invoiced and voided sales, budget stop and resume, error and resume, lock contention, window edges and widening, allow-list privacy and tax-inclusive handling.
 
 ## Consequences
 - Line-level tools (revenue and margin by SKU, velocity, explained negatives) become a few seconds after the first load; the first load is minutes and scales linearly (about 18 min per 1,000 sales).

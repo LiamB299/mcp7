@@ -32,17 +32,18 @@ TypeScript, Node >=22, ESM, official MCP SDK v2 (`@modelcontextprotocol/server`)
 
 ## Current MVP
 Read-only tools: `cin7_connection_check`, `receivables_overdue`, `sales_summary`, `stock_position`, `order_lookup`, `open_orders_pipeline`, `stock_health` (ADR 0003 + ADR 0004, accepted provisionally: eval result in `docs/research/mvp-evaluation.md` — MCP 10/10 vs baseline 8/10 in scope against list-rollup definitions (not document-level truth: see the correction in that file), 2.5x faster, ~1.8x cheaper; re-run with `eval/` after tool changes). Shared modules: `src/stage.ts` (workflow stage from `Type` + sub-statuses, never master `Status`), `src/shape.ts` (allow-list PII shaping, line cap, data-as-of), `src/cin7/types.ts` (verified row shapes). Deferred: line-level cache, writes, global response-size budget. Server loads repo `.env` itself; keep the key out of the model's context.
+Read-only tools: `cin7_connection_check`, `receivables_overdue`, `sales_summary`, `stock_position`, `order_lookup`, `open_orders_pipeline`, `stock_health`, `sales_by_sku`, `cache_refresh`, `cache_status` (ADR 0003 + 0004 + 0005, accepted provisionally: eval result in `docs/research/mvp-evaluation.md` — MCP 10/10 vs baseline 8/10 in scope, 2.5x faster, ~1.8x cheaper; re-run with `eval/` after tool changes). Shared modules: `src/stage.ts` (workflow stage from `Type` + sub-statuses, never master `Status`), `src/shape.ts` (allow-list PII shaping, line cap, data-as-of), `src/cin7/types.ts` (verified row shapes). Deferred: line-level cache, writes, global response-size budget. Server loads repo `.env` itself; keep the key out of the model's context.
 
 ## Layout
 ```
 CLAUDE.md
-src/                   index.ts (stdio entry), server.ts (factory), config.ts, cin7/client.ts, tools/
+src/                   index.ts (stdio entry), server.ts (factory), config.ts, cin7/ (client, paginate, types), cache/ (schema, extract, store, sync, query, progress), tools/
 test/                  vitest, in-memory client<->server
 docs/
   README.md            index
   glossary.md
   justifications.md
-  research/            cin7-core-api.md, mcp-landscape.md, user-complaints.md, sandbox-findings.md, prioritisation.md, mvp-evaluation.md
+  research/            cin7-core-api.md, mcp-landscape.md, user-complaints.md, sandbox-findings.md, prioritisation.md, mvp-evaluation.md, line-cache-spike.md
   workflow-guide.md    how we work with Claude Code (living)
   eval/ (repo root)    A/B evaluation harness
   design/              mermaid diagrams, architecture sketches

@@ -142,7 +142,9 @@ const DEFINITION =
   'are ASSUMPTIONS you set (defaults 14 and 30), not supplier data. Reasons: below_cin7_threshold ' +
   '(product MinimumBeforeReorder > 0 and available at or below it), stockout_before_delivery (days of ' +
   'cover shorter than the lead time), needs_cover (suggested quantity above 0). Negative available stock ' +
-  'counts as a shortfall in the suggested quantity even with no sales. Ranking: fewest days of cover ' +
+  'counts as a shortfall in the suggested quantity even with no sales. suggestedQuantity is velocity-based: ' +
+  'a product that is only below its Cin7 threshold (no recent sales) shows 0, so use cin7ReorderQuantity for it. ' +
+  'Ranking: fewest days of cover ' +
   'first, products without sales last. Stock is current (stockAsOf now); with a past asOf only the sales ' +
   'window moves. Zero velocity with a short or unloaded window does not mean no demand: check coverage; ' +
   'when complete is false totals are PARTIAL. By default the cache is refreshed first (read-only GETs; the ' +

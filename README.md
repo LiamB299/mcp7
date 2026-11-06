@@ -60,16 +60,17 @@ A/B test: Claude Code + Bash + the key (baseline) vs the same with this MCP. Que
 | `open_orders_pipeline` | `includePurchases?` | Open sales by workflow stage, stuck counts (awaiting pick / ship / invoice / payment), purchase orders awaiting receipt, and how many sales the master status misdescribes |
 | `stock_health` | `topN?`, `includeReorder?` | Negative available stock, on-order-with-nothing-on-hand, products at or below their reorder point, availability formula mismatches (reads the product list: about 2 large calls) |
 | `sales_by_sku` | `from?`, `to?`, `topN?`, `sortBy?`, `refresh?`, `maxMinutes?` | Revenue (ex-tax), quantity, cost and margin by SKU from the **line-level cache**, attributed by invoice or credit-note date. May warm the cache (about 1.1 s per invoiced sale); states coverage and returns `complete: false` while the window is not fully loaded |
+| `reorder_suggestions` | `windowDays?`, `leadTimeDays?` (default 14), `targetCoverDays?` (default 30), `asOf?`, `topN?`, `refresh?`, `maxMinutes?` | Which products to reorder: net units sold per day (invoices minus credit notes, from the cache) against current stock and Cin7 reorder thresholds; days of cover, stock-out-before-delivery flag and a suggested quantity under the stated lead-time and cover assumptions |
 | `cache_refresh` | `windowDays?` (or `all`), `full?`, `maxMinutes?` | Loads or refreshes the local snapshot: lists headers, fetches details only for changed sales, resumable at a time budget, progress notifications |
 | `cache_status` | none | Local cache only (no Cin7 calls): size, last sync, window, pending details and a rollup-drift summary (Cin7 list totals vs invoice and credit-note documents) |
 
-Not built yet (prioritised in [`docs/research/prioritisation.md`](docs/research/prioritisation.md)): explanations for negative stock, sales velocity and reorder suggestions, and any write operations.
+Not built yet (prioritised in [`docs/research/prioritisation.md`](docs/research/prioritisation.md)): explanations for negative stock and any write operations. This iteration is read-only against Cin7 by decision.
 
 ## Tech
 
 - **TypeScript** on Node 22+, ESM; official **MCP SDK v2** (`@modelcontextprotocol/server`), **Zod v4** schemas for tool input and output ([ADR 0002](docs/adr/0002-typescript-mcp-sdk-v2.md)).
 - **stdio** transport (local Claude Code); native `fetch` for Cin7; no database, but a local JSON snapshot cache for line-level data ([ADR 0005](docs/adr/0005-line-level-snapshot-cache.md)). Streamable HTTP is deferred (ADR 0002).
-- Decisions are recorded as ADRs: [0001](docs/adr/0001-record-architecture-decisions.md) process, [0002](docs/adr/0002-typescript-mcp-sdk-v2.md) stack, [0003](docs/adr/0003-read-only-reports-mvp.md) reports MVP, [0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md) PII shaping and stage derivation, [0005](docs/adr/0005-line-level-snapshot-cache.md) line-level cache, [0006](docs/adr/0006-document-basis-reports.md) document-basis receivables and sales summary.
+- Decisions are recorded as ADRs: [0001](docs/adr/0001-record-architecture-decisions.md) process, [0002](docs/adr/0002-typescript-mcp-sdk-v2.md) stack, [0003](docs/adr/0003-read-only-reports-mvp.md) reports MVP, [0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md) PII shaping and stage derivation, [0005](docs/adr/0005-line-level-snapshot-cache.md) line-level cache, [0006](docs/adr/0006-document-basis-reports.md) document-basis receivables and sales summary, [0007](docs/adr/0007-velocity-and-reorder-suggestions.md) velocity and reorder suggestions.
 - Tooling: vitest (unit tests with synthetic fixtures), Biome (lint and format), `tsc`, npm.
 - Implementation of individual tools is delegated to Haiku agents and reviewed (see `CLAUDE.md`).
 
@@ -106,9 +107,9 @@ Debug with `npm run inspect`. Re-run the evaluation after changing tools: see [`
 
 ## Project status and how to resume
 
-`master` is green (typecheck, lint, 251 tests, build) once the document-basis PR is merged. Ten tools, the snapshot cache, the evaluation harness (`eval/`, 11 pre-registered questions) and six ADRs exist. ADRs 0003 to 0006 are accepted provisionally, each with a "Progress and where to continue" section listing its gaps.
+`master` is green (typecheck, lint, tests, build). Eleven tools, the snapshot cache, the evaluation harness (`eval/`, 12 pre-registered questions) and seven ADRs exist. ADRs 0003 to 0007 are accepted provisionally, each with a "Progress and where to continue" section listing its gaps.
 
-**Next, in order:** (1) re-evaluate Q1 to Q3 against the document-based truth (`eval/truth-docs.mjs`, written, not yet run; needs approval); (2) sales velocity and reorder suggestions on the cache; (3) explanations for negative stock; later, workflow writes (needs explicit consent and a confirmation design). Open items, user actions and unverified claims are tracked in the handoff document: [`docs/handoff/2026-11-06-cin7-mcp-roadmap.md`](docs/handoff/2026-11-06-cin7-mcp-roadmap.md) (index: [`docs/handoff/README.md`](docs/handoff/README.md)).
+**Next, in order:** (1) evaluate `reorder_suggestions` (Q12 and `eval/truth-reorder.mjs` are written, not run; needs approval); (2) explanations for negative stock (needs order lines for open sales in the cache); later, workflow writes (needs explicit consent and a confirmation design; none this iteration). Open items, user actions and unverified claims are tracked in the handoff document: [`docs/handoff/2026-11-06-cin7-mcp-roadmap.md`](docs/handoff/2026-11-06-cin7-mcp-roadmap.md) (index: [`docs/handoff/README.md`](docs/handoff/README.md)).
 
 **Rules of engagement** (details in `CLAUDE.md` and [`docs/workflow-guide.md`](docs/workflow-guide.md)):
 - Feature branch per change, one PR straight into `master`, no stacked PRs, commit and push; the maintainer reviews and merges.

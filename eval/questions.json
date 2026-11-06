@@ -1,6 +1,6 @@
 {
   "asOf": "2026-11-05",
-  "note": "Pre-registered 2026-11-05 before any evaluation run; wave-2 questions (Q7-Q10) and Q6's move into scope were registered 2026-11-06 before their first run. Wording is natural, not definitional: part of what is tested is whether Claude picks the right definition. {ORDER_NUMBER} is substituted at run time from eval/out/truth.json (never committed). Q11 (revenue by SKU, wave 3) and its alternative readings (drafts included; credit notes ignored; tax-inclusive) were registered 2026-11-06 before its first run. For Q11 the treatment arm gets a fresh cache directory on rep 1 (cold) and reuses it on later reps (warm); results are reported cold and warm separately.",
+  "note": "Pre-registered 2026-11-05 before any evaluation run; wave-2 questions (Q7-Q10) and Q6's move into scope were registered 2026-11-06 before their first run. Wording is natural, not definitional: part of what is tested is whether Claude picks the right definition. {ORDER_NUMBER} is substituted at run time from eval/out/truth.json (never committed). Q11 (revenue by SKU, wave 3) and its alternative readings (drafts included; credit notes ignored; tax-inclusive) were registered 2026-11-06 before its first run. For Q11 the treatment arm gets a fresh cache directory on rep 1 (cold) and reuses it on later reps (warm); results are reported cold and warm separately. Q12 (reorder suggestions, wave 4) and its alternative readings (365-day window; SKU-keyed join; credit notes ignored; threshold-only) were registered 2026-11-06 before any run.",
   "questions": [
     {
       "id": "Q1",
@@ -72,6 +72,13 @@
       "wave": 3,
       "text": "Which 3 SKUs have the highest invoiced revenue excluding tax, and how much did each bring in? Ignore voided sales.",
       "answerFormat": "{\"skus\": [{\"sku\": \"<sku>\", \"revenue\": <number>}, ...]}"
+    },
+    {
+      "id": "Q12",
+      "scope": "in",
+      "wave": 4,
+      "text": "Assuming a supplier lead time of 14 days and wanting 30 days of cover after delivery, which 3 products most urgently need reordering based on the last 90 days of sales, and how many units of each should be ordered?",
+      "answerFormat": "{\"products\": [{\"sku\": \"<sku>\", \"quantity\": <integer>}, ...]}"
     }
   ]
 }

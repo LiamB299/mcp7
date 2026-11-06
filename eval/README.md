@@ -29,3 +29,8 @@ node eval/run.mjs --reps 2 --model sonnet  # real API spend: ~24 headless Claude
 - Read-only, about 170 paced calls (one sale list pass plus one `sale` detail per non-voided sale), about 3.5 minutes. Needs `.env` (`CIN7_BASE_URL`, `CIN7_ACCOUNT_ID`, `CIN7_APPLICATION_KEY`).
 - `truth-sku.mjs` merges Q11 into `eval/out/truth.json`, so on a fresh checkout run `node eval/truth.mjs` first, then `node eval/truth-sku.mjs`.
 - **Not wired into grading yet.** `run.mjs` grades Q1 to Q3 against `eval/out/truth.json` (list basis). Before the document-basis re-evaluation (register R2) point the Q1 to Q3 grading at `truth-docs.json` and pre-register the readings: the script's primaries differ in tax basis (Q2 ex-tax including additional charges, Q3 tax-inclusive billed), and that must be settled before any paid run.
+
+## Reorder truth (Q12)
+- `truth-reorder.mjs` recomputes Q12 (reorder suggestions: 14-day lead time, 30 days of cover) from invoice and credit-note lines (90-day primary; 365-day, SKU-keyed, credit-notes-ignored and threshold-only readings under `alt`), joined to `ref/productavailability` and `product`. Output: `eval/out/truth-reorder.json` (gitignored, separate file).
+- Read-only (GET only), about 170 paced calls (about 3.5 minutes). Needs `.env` (`CIN7_BASE_URL`, `CIN7_ACCOUNT_ID`, `CIN7_APPLICATION_KEY`). The maintainer runs it.
+- **`run.mjs` does not grade Q12 yet.** Grading for Q12 is added when the evaluation is approved.

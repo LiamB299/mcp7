@@ -11,6 +11,13 @@ interface FakeSale {
   status?: string;
   invoiced?: boolean;
   lines?: number;
+  /** List rollups (default: InvoiceAmount 100, PaidAmount 0, status from `invoiced`, no due date). */
+  listInvoiceAmount?: number;
+  listPaid?: number;
+  combinedStatus?: string;
+  dueDate?: string;
+  /** Invoice `Paid` on the detail document. */
+  paid?: number;
 }
 
 /** Fake Cin7: honours Page/Limit and UpdatedSince like the real list, counts every call. */
@@ -37,14 +44,16 @@ function fakeApi(sales: FakeSale[]) {
               CustomerID: 'c1',
               Type: 'Simple Sale',
               Status: s.status ?? 'ORDERED',
-              CombinedInvoiceStatus: s.invoiced === false ? 'NOT INVOICED' : 'INVOICED',
+              CombinedInvoiceStatus:
+                s.combinedStatus ?? (s.invoiced === false ? 'NOT INVOICED' : 'INVOICED'),
               OrderDate: `${s.orderDate}T00:00:00`,
               InvoiceDate: s.invoiceDate ? `${s.invoiceDate}T00:00:00` : null,
+              InvoiceDueDate: s.dueDate ? `${s.dueDate}T00:00:00` : null,
               Updated: s.updated,
               BaseCurrency: 'ZAR',
               CustomerCurrency: 'ZAR',
-              InvoiceAmount: 100,
-              PaidAmount: 0,
+              InvoiceAmount: s.listInvoiceAmount ?? 100,
+              PaidAmount: s.listPaid ?? 0,
             }));
           return { Total: rows.length, Page: 1, SaleList: query.Page === 1 ? rows : [] };
         }
@@ -67,6 +76,7 @@ function fakeApi(sales: FakeSale[]) {
                 Total: 115,
                 TotalBeforeTax: 100,
                 Tax: 15,
+                Paid: s.paid ?? 0,
                 Lines: Array.from({ length: s.lines ?? 1 }, (_, i) => ({
                   SKU: `SKU-${i}`,
                   Quantity: 1,
@@ -321,5 +331,102 @@ describe('syncSnapshot', () => {
     );
     expect(seen).toContain('details:2/2');
     expect(store.saves).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('syncSnapshot: list rollup drift and due dates', () => {
+  it('full sync refetches a sale whose list PaidAmount changed although Updated is equal', async () => {
+    const api = fakeApi(sales());
+    const store = createMemoryStore();
+    await syncSnapshot({ cin7: api.client, store }, base());
+    api.sales[0]!.listPaid = 50; // payment recorded; Updated not bumped
+    api.sales[0]!.paid = 50;
+    api.log.length = 0;
+    const r = await syncSnapshot({ cin7: api.client, store }, base({ full: true }));
+    expect(r.mode).toBe('full');
+    expect(api.log.filter((l) => l === 'sale')).toHaveLength(1);
+    expect(r.fetchedDetails).toBe(1);
+    const a = (await store.load())!.sales.a!;
+    expect(a.listPaidAmount).toBe(50);
+    expect(a.docs[0]!.paid).toBe(50);
+  });
+
+  it.each([
+    [
+      'InvoiceAmount',
+      (s: FakeSale) => {
+        s.listInvoiceAmount = 120;
+      },
+      'listInvoiceAmount',
+      120,
+    ],
+    [
+      'CombinedInvoiceStatus',
+      (s: FakeSale) => {
+        s.combinedStatus = 'INVOICED (PARTIAL)'; // still starts INVOICED, so it stays a detail sale
+      },
+      'listInvoiceStatus',
+      'INVOICED (PARTIAL)',
+    ],
+  ] as const)(
+    'full sync refetches a sale whose list %s changed although Updated is equal',
+    async (_label, change, field, value) => {
+      const api = fakeApi(sales());
+      const store = createMemoryStore();
+      await syncSnapshot({ cin7: api.client, store }, base());
+      change(api.sales[0]!);
+      api.log.length = 0;
+      const r = await syncSnapshot({ cin7: api.client, store }, base({ full: true }));
+      expect(api.log.filter((l) => l === 'sale')).toHaveLength(1);
+      expect(r.fetchedDetails).toBe(1);
+      expect((await store.load())!.sales.a![field]).toBe(value);
+    },
+  );
+
+  it('full sync with nothing changed fetches no details (regression guard)', async () => {
+    const api = fakeApi(sales());
+    const store = createMemoryStore();
+    await syncSnapshot({ cin7: api.client, store }, base());
+    api.log.length = 0;
+    const r = await syncSnapshot({ cin7: api.client, store }, base({ full: true }));
+    expect(r.mode).toBe('full');
+    expect(r.fetchedDetails).toBe(0);
+    expect(api.log.filter((l) => l === 'sale')).toHaveLength(0);
+  });
+
+  it('incremental sync cannot see a rollup-only change: UpdatedSince filters the sale out', async () => {
+    const api = fakeApi(sales());
+    const store = createMemoryStore();
+    await syncSnapshot({ cin7: api.client, store }, base());
+    api.sales[0]!.listPaid = 50; // Updated not bumped, and the sale is older than the cursor
+    api.sales[0]!.paid = 50;
+    api.log.length = 0;
+    const r = await syncSnapshot({ cin7: api.client, store }, base());
+    expect(r.mode).toBe('incremental');
+    expect(api.log).toContain('list:since');
+    expect(r.fetchedDetails).toBe(0);
+    expect(api.log.filter((l) => l === 'sale')).toHaveLength(0);
+    // Documented limitation: the stored rollup stays stale until a full sync runs.
+    expect((await store.load())!.sales.a!.listPaidAmount).toBe(0);
+  });
+
+  it('header-only drift: a cached sale without listInvoiceDueDate gets it, with docs untouched and no detail call', async () => {
+    const api = fakeApi(sales());
+    const store = createMemoryStore();
+    await syncSnapshot({ cin7: api.client, store }, base());
+    const before = (await store.load())!.sales.a!;
+    const snap = (await store.load())!;
+    delete snap.sales.a!.listInvoiceDueDate; // snapshot written before the field existed
+    await store.save(snap);
+    api.sales[0]!.dueDate = '2026-11-20';
+    api.log.length = 0;
+    const r = await syncSnapshot({ cin7: api.client, store }, base({ full: true }));
+    expect(r.fetchedDetails).toBe(0);
+    expect(api.log.filter((l) => l === 'sale')).toHaveLength(0);
+    const a = (await store.load())!.sales.a!;
+    expect(a.listInvoiceDueDate).toBe('2026-11-20');
+    expect(a.docs).toEqual(before.docs);
+    expect(a.detailFetched).toBe(true);
+    expect(a.pendingDetail).toBe(false);
   });
 });

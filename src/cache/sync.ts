@@ -70,7 +70,9 @@ const minFrom = (a: string | null, b: string | null): string | null =>
 
 /**
  * Refresh the snapshot. Change detection compares the per-sale `Updated` from the header list with the
- * stored value (UpdatedSince only narrows the list). Pending details are persisted, so a stop at the time
+ * stored value, and the list rollups (paid, invoice amount, invoice status) with the stored ones, because
+ * recording a payment may not bump `Updated`. UpdatedSince only narrows the list, so a rollup-only change
+ * is seen only by a full (unfiltered) sync. Pending details are persisted, so a stop at the time
  * budget or an error is resumable. Holds the store lock for the duration.
  */
 export async function syncSnapshot(
@@ -120,10 +122,28 @@ export async function syncSnapshot(
       if (!row.SaleID) continue;
       const prior = snap.sales[row.SaleID];
       const header = headerFromListRow(row);
+      // A changed list rollup means the stored documents may be stale even when `Updated` is equal.
+      const docsStale =
+        prior !== undefined &&
+        (prior.listPaidAmount !== header.listPaidAmount ||
+          prior.listInvoiceAmount !== header.listInvoiceAmount ||
+          prior.listInvoiceStatus !== header.listInvoiceStatus);
       const unchanged =
-        prior !== undefined && prior.updated === header.updated && prior.detailFetched;
+        prior !== undefined &&
+        prior.updated === header.updated &&
+        prior.detailFetched &&
+        !docsStale;
       if (header.updatedMs > maxUpdated) maxUpdated = header.updatedMs;
-      if (unchanged) continue; // docs (or the header-only verdict) already reflect this version
+      if (unchanged) {
+        // Docs already reflect this version. The sale-level list due date is a list-header field, not taken
+        // from the detail, so refresh it in place (no detail call); older snapshots are filled this way too.
+        if (prior.listInvoiceDueDate !== header.listInvoiceDueDate)
+          snap.sales[row.SaleID] = {
+            ...prior,
+            listInvoiceDueDate: header.listInvoiceDueDate ?? null,
+          };
+        continue;
+      }
       const needs = wantsDetail(row) && inWindow(row, effectiveFrom);
       snap.sales[row.SaleID] = needs
         ? { ...header, pendingDetail: true }

@@ -32,7 +32,8 @@ function isCalendarDate(value: string): boolean {
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 const TOOL_DEFINITION = [
-  'Sales with OrderDate (date part) in [from, to], both inclusive. Status VOIDED is excluded.',
+  'Sales with OrderDate (date part) in [from, to], both inclusive; from and to are optional (omitted = open-ended, both omitted = all time). Status VOIDED is excluded.',
+  'Undated sales (no parsable OrderDate) are included only when no date bound is given; with groupBy month they group under "(no date)".',
   'saleCount = non-void sales in the group (uninvoiced sales included).',
   'invoicedTotal = sum of InvoiceAmount, net of credit notes; uninvoiced sales (0) add nothing; rounded to 2 dp.',
   'groupBy month = OrderDate yyyy-MM, ascending, all months returned.',
@@ -49,8 +50,8 @@ const groupSchema = z.object({
 });
 
 const outputSchema = z.object({
-  from: z.string(),
-  to: z.string(),
+  from: z.string().nullable(),
+  to: z.string().nullable(),
   groupBy: z.enum(['month', 'channel', 'customer']),
   currency: z.string().nullable(),
   salesScanned: z.number().int(),
@@ -77,12 +78,12 @@ interface Bucket {
 /** Group key for a row, plus the display key and customer id. */
 function groupFor(
   row: SaleListRow,
-  day: string,
+  day: string | undefined,
   groupBy: GroupBy,
 ): { mapKey: string; key: string; customerId: string | undefined } {
   switch (groupBy) {
     case 'month': {
-      const month = day.slice(0, 7);
+      const month = day ? day.slice(0, 7) : '(no date)';
       return { mapKey: month, key: month, customerId: undefined };
     }
     case 'channel': {
@@ -114,10 +115,18 @@ export function registerSalesSummary(server: McpServer, cin7: Cin7Client): void 
     'sales_summary',
     {
       title: 'Sales summary',
-      description: `Summarise Cin7 sales orders for a date range, grouped by month, channel or customer. ${TOOL_DEFINITION}`,
+      description: `Summarise Cin7 sales orders for an optional date range (omit from/to for all time), grouped by month, channel or customer. ${TOOL_DEFINITION}`,
       inputSchema: z.object({
-        from: z.string().describe('Start date, inclusive, yyyy-MM-dd.'),
-        to: z.string().describe('End date, inclusive, yyyy-MM-dd. Must not be before from.'),
+        from: z
+          .string()
+          .optional()
+          .describe('Start date, inclusive, yyyy-MM-dd. Optional; omitted = no lower bound.'),
+        to: z
+          .string()
+          .optional()
+          .describe(
+            'End date, inclusive, yyyy-MM-dd. Optional; omitted = no upper bound. Must not be before from.',
+          ),
         groupBy: z.enum(['month', 'channel', 'customer']).describe('How to group the sales.'),
         topN: z
           .number()
@@ -134,10 +143,13 @@ export function registerSalesSummary(server: McpServer, cin7: Cin7Client): void 
     },
     async ({ from, to, groupBy, topN }) => {
       try {
-        if (!isCalendarDate(from))
+        if (from !== undefined && !isCalendarDate(from))
           throw new Error(`from must be a valid yyyy-MM-dd date, got "${from}"`);
-        if (!isCalendarDate(to)) throw new Error(`to must be a valid yyyy-MM-dd date, got "${to}"`);
-        if (from > to) throw new Error(`from (${from}) must not be after to (${to})`);
+        if (to !== undefined && !isCalendarDate(to))
+          throw new Error(`to must be a valid yyyy-MM-dd date, got "${to}"`);
+        if (from !== undefined && to !== undefined && from > to)
+          throw new Error(`from (${from}) must not be after to (${to})`);
+        const hasBound = from !== undefined || to !== undefined;
 
         const { rows } = await listAll<SaleListRow>(cin7, 'saleList', {}, 'SaleList');
 
@@ -147,7 +159,11 @@ export function registerSalesSummary(server: McpServer, cin7: Cin7Client): void 
         for (const row of rows) {
           if (row.Status === 'VOIDED') continue;
           const day = dateOnly(row.OrderDate);
-          if (!day || day < from || day > to) continue;
+          if (day === undefined) {
+            if (hasBound) continue;
+          } else if ((from !== undefined && day < from) || (to !== undefined && day > to)) {
+            continue;
+          }
 
           const { mapKey, key, customerId } = groupFor(row, day, groupBy);
           const amount = row.InvoiceAmount ?? 0;
@@ -166,7 +182,11 @@ export function registerSalesSummary(server: McpServer, cin7: Cin7Client): void 
         let groups: Bucket[];
         let other: { groups: number; saleCount: number; invoicedTotal: number } | undefined;
         if (groupBy === 'month') {
-          groups = all.sort((a, b) => a.key.localeCompare(b.key));
+          groups = all.sort(
+            (a, b) =>
+              (a.key === '(no date)' ? 1 : 0) - (b.key === '(no date)' ? 1 : 0) ||
+              a.key.localeCompare(b.key),
+          );
         } else {
           all.sort(
             (a, b) => b.total - a.total || b.saleCount - a.saleCount || a.key.localeCompare(b.key),
@@ -183,8 +203,8 @@ export function registerSalesSummary(server: McpServer, cin7: Cin7Client): void 
         }
 
         const output = {
-          from,
-          to,
+          from: from ?? null,
+          to: to ?? null,
           groupBy,
           currency: rows[0]?.BaseCurrency ?? null,
           salesScanned: rows.length,

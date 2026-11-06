@@ -160,3 +160,7 @@ Default order (§5) assumes the reporting-and-stock pain, which has the most com
 2. The team's top pain (reports, stock accuracy, order processing, purchasing).
 3. Production scale (sales and products count) and whether the Automation add-on exists.
 4. Whether write tools are wanted, and consent to test them in the sandbox.
+
+---
+
+**Update 2026-11-06:** T6 `order_lookup`, T5 `open_orders_pipeline`, T2 `stock_health`, F2 normaliser and F3 shaper are built (ADR 0004); `sales_summary` dates are optional. Remaining: line cache C1 and its dependants (C2-C4), workflow writes W1.

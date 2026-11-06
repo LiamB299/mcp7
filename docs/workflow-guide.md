@@ -91,6 +91,8 @@ When a claim matters, test it against a **pre-registered kill criterion** rather
 | The write-up almost called anomalies "confirmed" | Keep pain evidence and feasibility in separate columns |
 | An exact-label grader would have scored correct baseline answers wrong (for example "None" vs "(none)"), biasing the eval toward the MCP | Make graders label-agnostic and smoke-test the harness before spending |
 | A narrow tool declined an out-of-scope question | Coverage is the product; plan which questions you must answer |
+| Stacked PRs merged into their parent branches, so `master` missed the work twice and a consolidation round was needed | Base every branch on `origin/master` and open one PR per change straight into `master`; avoid stacks unless the parent merges first |
+| Haiku typed Cin7 ids as numbers (real ids are GUID strings) | Put verified field facts and shared row types in the brief and the repo (`src/cin7/types.ts`); live-check every tool |
 
 ## 8. Habits worth keeping (from the usage review)
 
@@ -113,6 +115,7 @@ When a claim matters, test it against a **pre-registered kill criterion** rather
 
 | Date | Change |
 |---|---|
+| 2026-11-06 | Wave 2: single-PR-to-master rule; row types shared in `src/cin7/types.ts`; stage and shaping logic written by the main model, tools by Haiku agents; eval questions pre-registered before running. |
 | 2026-11-05 | Guide created from project history so far and the usage review. Covers: loop, roles, conventions, Haiku briefs, preflight, lessons. |
 
 **When to update:** a new convention or rule is agreed; a mistake is repeated or newly learned; the model roles or tooling change (new skills, hooks, MCP servers); the preflight changes. Add a row to the log and edit the relevant section.

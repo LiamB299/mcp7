@@ -1,6 +1,6 @@
 # cin7-core-mcp
 
-A read-only [MCP](https://modelcontextprotocol.io) server that lets Claude Code answer business reporting questions about a [Cin7 Core](https://www.cin7.com/) (formerly DEAR Inventory) account: overdue receivables, sales summaries, stock value. Status: **MVP, sandbox only**.
+A read-only [MCP](https://modelcontextprotocol.io) server that lets Claude Code answer business questions about a [Cin7 Core](https://www.cin7.com/) (formerly DEAR Inventory) account: overdue receivables, sales summaries, stock value and health, order status and the open-orders pipeline. Status: **MVP plus wave 2, sandbox only**.
 
 ## The problem
 
@@ -41,7 +41,7 @@ A/B test: Claude Code + Bash + the key (baseline) vs the same with this MCP, 5 i
 | Time | 2.5x | 1x |
 | API key reachable by the model | yes | no |
 
-The baseline's misses were the gross-vs-net invoice trap. Savings are small in absolute terms (about a cent and a few seconds per question), the sample is small, and the same author wrote tools and questions. A narrow MCP also cannot answer questions outside its tools (the MCP arm declined an out-of-scope purchase-order question; the baseline queried the API). Full numbers and caveats: [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md), decision in [ADR 0003](docs/adr/0003-read-only-reports-mvp.md).
+The baseline's misses were the gross-vs-net invoice trap. Savings are small in absolute terms (about a cent and a few seconds per question), the sample is small, and the same author wrote tools and questions. A narrow MCP also cannot answer questions outside its tools (the MCP arm declined an out-of-scope purchase-order question; the baseline queried the API). A second wave (7 tools, 30 runs) came out 15/15 vs 12/15 correct, baseline 1.4x cost and 2.1x time; part of the gap is a definition ambiguity rather than a hard error, and the master-status trap itself did not separate the arms. Full numbers and caveats: [`docs/research/mvp-evaluation.md`](docs/research/mvp-evaluation.md); decisions in [ADR 0003](docs/adr/0003-read-only-reports-mvp.md) and [ADR 0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md).
 
 ## Tools (all read-only)
 
@@ -49,10 +49,13 @@ The baseline's misses were the gross-vs-net invoice trap. Savings are small in a
 |---|---|---|
 | `cin7_connection_check` | none | Credentials work; company, currency, time zone |
 | `receivables_overdue` | `asOf?` (yyyy-MM-dd, default today in tenant zone), `topN?` | Outstanding and overdue invoice balances, age buckets (1-30, 31-60, 61-90, 90+), largest overdue balances |
-| `sales_summary` | `from`, `to`, `groupBy` (`month` / `channel` / `customer`), `topN?` | Invoiced revenue and sale counts over a date range, net of credit notes, voided sales excluded |
+| `sales_summary` | `groupBy` (`month` / `channel` / `customer`), `from?`, `to?`, `topN?` | Invoiced revenue and sale counts, net of credit notes, voided sales excluded; omit dates for all time |
 | `stock_position` | `location?`, `topN?` | Stock value and units by location, top products by value, count of negative-available stock |
+| `order_lookup` | `orderNumber` | One sale by exact order number: stage (from sub-statuses), capped lines, fulfilment, invoices. **Personal contact data is dropped** (allow-list shaping) |
+| `open_orders_pipeline` | `includePurchases?` | Open sales by workflow stage, stuck counts (awaiting pick / ship / invoice / payment), purchase orders awaiting receipt, and how many sales the master status misdescribes |
+| `stock_health` | `topN?`, `includeReorder?` | Negative available stock, on-order-with-nothing-on-hand, products at or below their reorder point, availability formula mismatches (reads the product list: about 2 large calls) |
 
-Not built yet (prioritised in [`docs/research/prioritisation.md`](docs/research/prioritisation.md)): order lookup, open-orders pipeline, stock-health explanations, a line-level cache for SKU and margin reports, and any write operations.
+Not built yet (prioritised in [`docs/research/prioritisation.md`](docs/research/prioritisation.md)): a line-level cache for SKU and margin reports, explanations for negative stock, and any write operations.
 
 ## Tech
 
@@ -87,7 +90,7 @@ Debug with `npm run inspect`. Re-run the evaluation after changing tools: see [`
 ## Limitations
 
 - **Sandbox only.** Built and tested against a Cin7 sandbox, which is small and synthetic. Production scale is untested.
-- **No PII masking and no response-size budgets yet.** Tool outputs can include customer names. Deliberately deferred until the MVP was proven.
+- **Personal data:** `order_lookup` uses allow-list shaping (no contact person, email, phone, addresses or free-text notes) and caps lines. Other tools return aggregates but can include customer business names. There is no global response-size budget yet.
 - **No cache.** Each call re-reads the lists (about 2-4 paced calls per tool today).
 - **Read-only.** Nothing writes to Cin7.
 - **Rate limit.** Requests are serialised at about 1 per 1.1 s; the key is shared with anyone else using it.

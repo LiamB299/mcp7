@@ -1,6 +1,6 @@
 # ADR 0006: Document-basis receivables and sales summary
 
-- **Status:** accepted, provisional (live gate passed; the re-evaluation against a document-based truth has not been run, see Progress)
+- **Status:** accepted, provisional (live gate passed; wave 4 re-evaluation on documents: treatment 3 of 3 correct, baseline 0 of 3, n = 1)
 - **Date:** 2026-11-06
 - **Amends:** ADR 0003 (the list-rollup basis of `receivables_overdue` and `sales_summary`)
 
@@ -35,5 +35,5 @@ Option 2.
 <!-- retire-chat:progress:start -->
 ## Progress and where to continue (as of 2026-11-06)
 
-Built and live-verified (above). Not done: (1) re-run the evaluation (Q1 to Q3) against the document-basis truth from `eval/truth-docs.mjs`, which has been written but not run; paid runs and the truth pull need the maintainer's approval (register R2); (2) whether a payment bumps `Updated` is still untested, so the full header listing is the safeguard (R9); (3) no interactive Claude Code timeout test for the multi-minute first load (R10); (4) whether `paid` already reflects refunded credit notes is unverified, which is why `withoutCreditNetting` is shown. Note: `eval/run.mjs` still grades Q1 to Q3 against the list-basis `truth.json`; it must be pointed at `truth-docs.json` (and the tax basis of Q2 and Q3 pre-registered) before the re-evaluation, or the new tools would be graded wrong. Next: ask for approval, run `eval/truth-docs.mjs`, then the evaluation, then finalise acceptance or amend this ADR.
+Built, live-verified (above) and re-evaluated (wave 4 in [mvp-evaluation.md](../research/mvp-evaluation.md): `eval/truth-docs.mjs` matched the tools exactly; Q1 to Q3 treatment 3 of 3 correct against baseline 0 of 3, one run per arm, treatment cold each time so not faster on Q2 and Q3). `eval/run.mjs` now grades Q1 to Q3 against `truth-docs.json` with the tax readings pre-registered. Not done: (1) more repetitions and a warm-cache timing for these questions; (2) whether a payment bumps `Updated` is untested, so the full header listing is the safeguard (R9); (3) no interactive Claude Code timeout test for the multi-minute first load (R10); (4) whether `paid` already reflects refunded credit notes is unverified, which is why `withoutCreditNetting` is shown. Next: finalise acceptance on merge, or amend this ADR if the repetitions disagree.
 <!-- retire-chat:progress:end -->

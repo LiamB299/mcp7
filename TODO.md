@@ -16,7 +16,7 @@ Quick checklist for you. Context: [`docs/handoff/2026-11-06-cin7-mcp-roadmap.md`
 ## Done 2026-11-06 (second session)
 - R15 approved (`.claude/settings.local.json`, gitignored; `cin7-core` connected). R16: 16 stale branches deleted, remote and local. R17: `eval/out/`, old scratchpad data, `/tmp/s`, `/tmp/run.py`, `/private/tmp/evalcwd` removed. R18: R1 chosen and built (ADR 0006, PR `feat/document-basis-reports`).
 - Still yours: **R14** (rotate the sandbox key).
-- Needs your approval before it happens: run `node eval/truth.mjs` and `node eval/truth-docs.mjs` (read-only, about 170 paced calls) and then the paid re-evaluation of Q1 to Q3 (register R2).
+- R2 done on your go-ahead: truth pulls and a one-rep Q1 to Q3 run (about 0.28 US dollars notional): treatment 3 of 3 correct, baseline 0 of 3 (wave 4 in `docs/research/mvp-evaluation.md`). More repetitions need your approval.
 
 ## Starter prompt for the new session
 > Read `docs/handoff/2026-11-06-cin7-mcp-roadmap.md` (sections 0, 2 and 7), `docs/adr/0006-document-basis-reports.md`, `README.md` and `CLAUDE.md`. Then plan with me the next step: either the document-basis re-evaluation (R2, ask me before running anything) or velocity and reorder suggestions on the cache (R3). Use plan mode, an advisor check, and Haiku agents with high effort. Do not run evaluations or write to the sandbox without asking.

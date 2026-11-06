@@ -96,8 +96,11 @@ export async function syncSnapshot(
   try {
     const snap: Snapshot =
       (await deps.store.load()) ?? emptySnapshot(new Date(started).toISOString());
-    const asOf = options.asOf ?? (await resolveAsOf(cin7));
-    const requestedFrom = windowDays === null ? null : subtractDays(asOf, windowDays);
+    // The tenant time zone (one /me call) is only needed to compute a date window.
+    const requestedFrom =
+      windowDays === null
+        ? null
+        : subtractDays(options.asOf ?? (await resolveAsOf(cin7)), windowDays);
     const hadSnapshot = snap.lastSyncAt !== null;
     const effectiveFrom = hadSnapshot ? minFrom(snap.windowFrom, requestedFrom) : requestedFrom;
     const widened = hadSnapshot && effectiveFrom !== snap.windowFrom;

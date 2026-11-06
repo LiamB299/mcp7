@@ -1,25 +1,44 @@
 import type { McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { type ReceivablesOptions, receivablesFromDocs } from '../cache/receivables.js';
+import type { SnapshotStore } from '../cache/store.js';
 import { type Cin7Client, Cin7Error } from '../cin7/client.js';
-import { listAll } from '../cin7/paginate.js';
-import { dateOnly, daysBetween, resolveAsOf } from '../dates.js';
+import { resolveAsOf } from '../dates.js';
+import { dataAsOf } from '../shape.js';
+import {
+  coverageVerdict,
+  dateProblem,
+  errorResult,
+  loadSnapshotForAnswer,
+} from './cache-answer.js';
 
-/** Fields read from a `saleList` row (Cin7 V2 `SaleList` array). */
-interface SaleListRow {
-  SaleID?: string;
-  OrderNumber?: string | null;
-  Customer?: string | null;
-  CustomerID?: string | null;
-  Status?: string | null;
-  InvoiceAmount?: number | null;
-  PaidAmount?: number | null;
-  InvoiceDueDate?: string | null;
-  InvoiceNumber?: string | null;
-  BaseCurrency?: string | null;
-}
-
-const BUCKETS = ['1-30', '31-60', '61-90', '90+'] as const;
-type BucketKey = (typeof BUCKETS)[number];
+const inputSchema = z.object({
+  asOf: z
+    .string()
+    .optional()
+    .describe(
+      'Date to measure overdue against, yyyy-MM-dd. Defaults to today in the tenant time zone.',
+    ),
+  topN: z
+    .number()
+    .int()
+    .min(1)
+    .max(50)
+    .default(10)
+    .describe('How many of the largest overdue balances to list in top (1-50, default 10).'),
+  refresh: z
+    .boolean()
+    .default(true)
+    .describe(
+      'Refresh the local cache from Cin7 before answering (default true). Set false to answer from the existing cache only.',
+    ),
+  maxMinutes: z
+    .number()
+    .min(0.5)
+    .max(15)
+    .default(4.5)
+    .describe('Time budget for this call in minutes (0.5-15, default 4.5). Later calls resume.'),
+});
 
 const money = z.object({ count: z.number().int(), total: z.number() });
 
@@ -46,128 +65,106 @@ const outputSchema = z.object({
       outstanding: z.number(),
     }),
   ),
+  nonBaseCurrencySales: z.number().int(),
+  withoutCreditNetting: z.object({ outstanding: money, overdue: money }),
+  listRollup: z.object({
+    salesScanned: z.number().int(),
+    outstanding: money,
+    overdue: money,
+    noDueDate: money,
+  }),
+  coverage: z.object({
+    salesInSnapshot: z.number().int(),
+    withDetail: z.number().int(),
+    pendingDetail: z.number().int(),
+    windowFrom: z.string().nullable(),
+    rangeCovered: z.boolean(),
+  }),
+  complete: z.boolean(),
+  remaining: z.number().int(),
+  estimatedMinutesRemaining: z.number(),
+  refreshed: z.boolean(),
+  note: z.string().optional(),
+  dataAsOf: z.string(),
   definition: z.string(),
 });
 
-const DEFINITION = [
-  'Basis: Cin7 saleList rollup fields, not a reconciliation of invoice and credit-note documents.',
-  'Receivables = saleList rows whose Status is not VOIDED and whose outstanding balance',
-  '(InvoiceAmount - PaidAmount, rounded to 2 dp; Cin7 documents InvoiceAmount as net of credit notes',
-  'and PaidAmount as net of refunds) is above 0.005.',
-  'In the sandbox these rollups differ from the document totals on about 30% of sales, so treat results as the list rollup.',
-  'Overpaid or fully credited rows (zero or negative balance) are ignored, not netted against others.',
-  'Overdue = receivable whose InvoiceDueDate (date part) is strictly before asOf.',
-  'Receivables with no due date are counted under noDueDate, not overdue.',
-  'daysOverdue = whole days from due date to asOf. Age buckets cover overdue rows only, by daysOverdue.',
-  'top = overdue rows sorted by outstanding, largest first, limited to topN.',
-  'asOf defaults to today in the tenant time zone. Money is rounded to 2 dp.',
-].join(' ');
+const DEFINITION =
+  "Basis is the invoice and credit-note DOCUMENTS from the local cache, not Cin7's list rollups. " +
+  'Receivable = a non-voided sale with an authorised or paid invoice whose outstanding balance ' +
+  '(invoice totals minus amounts paid on invoices minus authorised credit notes, tax-inclusive, rounded ' +
+  '2 dp) is above 0.005. Fully paid, overpaid and fully credited sales are ignored, not netted against ' +
+  'other sales. Due date = the earliest due date among invoices that still have an open balance. A sale ' +
+  'with no such due date is counted under noDueDate, not overdue. Overdue = due strictly before asOf. ' +
+  'daysOverdue = whole days from due date to asOf; age buckets cover overdue sales only. ' +
+  'withoutCreditNetting ignores credit notes (a refunded credit note may already be reflected in the ' +
+  'paid amount, which is unverified). listRollup is the previous basis (Cin7 saleList InvoiceAmount minus ' +
+  'PaidAmount; it differs from the documents on about 30% of sandbox sales), kept for comparison. ' +
+  'Amounts are summed as stored. nonBaseCurrencySales counts receivable sales whose customer currency ' +
+  'differs from the sale currency. All history is loaded: the first load takes minutes (about 1.1 s per ' +
+  'invoiced sale) and calls resume. The coverage fields say whether the answer is complete; when complete ' +
+  'is false the totals are PARTIAL. asOf defaults to today in the tenant time zone. Customer business names ' +
+  'appear in top.';
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
-
-function bucketFor(days: number): BucketKey {
-  if (days <= 30) return '1-30';
-  if (days <= 60) return '31-60';
-  if (days <= 90) return '61-90';
-  return '90+';
-}
-
-export function registerReceivablesOverdue(server: McpServer, cin7: Cin7Client): void {
+export function registerReceivablesOverdue(
+  server: McpServer,
+  cin7: Cin7Client,
+  store: SnapshotStore,
+): void {
   server.registerTool(
     'receivables_overdue',
     {
       title: 'Receivables overdue',
       description:
-        'Summarise customer receivables (unpaid sales invoices) from Cin7 Core as of a date: ' +
-        'outstanding, overdue and no-due-date totals, overdue age buckets (1-30, 31-60, 61-90, 90+ days), ' +
-        'and the largest overdue balances. ' +
+        'Customer receivables (unpaid sales invoices) from the local line-level sales cache, on the ' +
+        'document basis: outstanding, overdue and no-due-date totals, overdue age buckets (1-30, 31-60, ' +
+        '61-90, 90+ days), the largest overdue balances, and the previous list-rollup figure for ' +
+        'comparison. Measured as of asOf (yyyy-MM-dd, default today in the tenant time zone). By default ' +
+        '(refresh true) it first refreshes the cache from Cin7 with read-only GETs, so it may warm the ' +
+        'cache: the first load covers all history and takes minutes (about 1.1 s per invoiced sale). ' +
+        'Calls resume where they stopped, bounded by maxMinutes. Every answer states coverage (complete, ' +
+        'remaining, pendingDetail); when complete is false the totals are PARTIAL and the note says how to ' +
+        'continue. Set refresh false to answer from the existing cache only. ' +
         `Definitions: ${DEFINITION}`,
-      inputSchema: z.object({
-        asOf: z
-          .string()
-          .optional()
-          .describe(
-            'Date to measure overdue against, yyyy-MM-dd. Defaults to today in the tenant time zone.',
-          ),
-        topN: z
-          .number()
-          .int()
-          .min(1)
-          .max(50)
-          .optional()
-          .describe('How many of the largest overdue balances to list (1-50). Default 10.'),
-      }),
+      inputSchema,
       outputSchema,
-      annotations: { readOnlyHint: true, openWorldHint: true },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
-    async (args) => {
+    async ({ asOf: asOfArg, topN, refresh, maxMinutes }, ctx) => {
       try {
-        const asOf = await resolveAsOf(cin7, args.asOf);
-        const topN = args.topN ?? 10;
-        const { rows } = await listAll<SaleListRow>(cin7, 'saleList', {}, 'SaleList');
+        const badAsOf = dateProblem('asOf', asOfArg);
+        if (badAsOf) return errorResult(badAsOf);
+        const asOf = await resolveAsOf(cin7, asOfArg);
 
-        const outstanding = { count: 0, total: 0 };
-        const overdue = { count: 0, total: 0 };
-        const noDueDate = { count: 0, total: 0 };
-        const buckets = Object.fromEntries(
-          BUCKETS.map((key) => [key, { count: 0, total: 0 }]),
-        ) as Record<BucketKey, { count: number; total: number }>;
-        const overdueRows: {
-          orderNumber: string | null;
-          customer: string | null;
-          customerId: string | null;
-          dueDate: string;
-          daysOverdue: number;
-          outstanding: number;
-        }[] = [];
-
-        for (const row of rows) {
-          if ((row.Status ?? '').toUpperCase() === 'VOIDED') continue;
-          const balance = round2((row.InvoiceAmount ?? 0) - (row.PaidAmount ?? 0));
-          if (!(balance > 0.005)) continue;
-
-          outstanding.count += 1;
-          outstanding.total += balance;
-
-          const due = dateOnly(row.InvoiceDueDate);
-          if (due === undefined) {
-            noDueDate.count += 1;
-            noDueDate.total += balance;
-            continue;
-          }
-          const days = daysBetween(due, asOf);
-          if (days <= 0) continue;
-
-          overdue.count += 1;
-          overdue.total += balance;
-          const bucket = buckets[bucketFor(days)];
-          bucket.count += 1;
-          bucket.total += balance;
-          overdueRows.push({
-            orderNumber: row.OrderNumber ?? null,
-            customer: row.Customer ?? null,
-            customerId: row.CustomerID ?? null,
-            dueDate: due,
-            daysOverdue: days,
-            outstanding: balance,
-          });
-        }
-
-        const money2 = (m: { count: number; total: number }) => ({
-          count: m.count,
-          total: round2(m.total),
+        // All history (from undefined): old unpaid invoices matter. full: true re-lists every header
+        // so a changed paid amount is noticed even when Updated did not move.
+        const loaded = await loadSnapshotForAnswer({
+          cin7,
+          store,
+          ctx,
+          refresh,
+          maxMinutes,
+          from: undefined,
+          full: true,
+          noCacheMessage:
+            'No cached sales data yet. Call receivables_overdue with refresh true (or cache_refresh) to build it; the first load takes minutes.',
         });
+        if (!loaded.ok) return errorResult(loaded.error);
+
+        const options: ReceivablesOptions = { asOf, topN };
+        const result = receivablesFromDocs(loaded.snapshot, options);
+        const { note, ...verdict } = coverageVerdict(refresh, loaded, result.coverage);
+
         const output = {
-          asOf,
-          currency: rows[0]?.BaseCurrency ?? null,
-          salesScanned: rows.length,
-          outstanding: money2(outstanding),
-          overdue: money2(overdue),
-          noDueDate: money2(noDueDate),
-          ageBuckets: Object.fromEntries(
-            BUCKETS.map((key) => [key, money2(buckets[key])]),
-          ) as Record<BucketKey, { count: number; total: number }>,
-          top: overdueRows.sort((a, b) => b.outstanding - a.outstanding).slice(0, topN),
+          ...result,
+          ...verdict,
+          ...(note !== undefined ? { note } : {}),
+          dataAsOf: dataAsOf(),
           definition: DEFINITION,
         };
         return {
@@ -179,7 +176,7 @@ export function registerReceivablesOverdue(server: McpServer, cin7: Cin7Client):
           e instanceof Cin7Error
             ? `Cin7 error (HTTP ${e.status}): ${e.message}`
             : `Unexpected error: ${(e as Error).message}`;
-        return { isError: true, content: [{ type: 'text', text: message }] };
+        return errorResult(message);
       }
     },
   );

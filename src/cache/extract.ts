@@ -112,6 +112,7 @@ export function headerFromListRow(row: SaleListRow): CachedSale {
     listInvoiceAmount: typeof row.InvoiceAmount === 'number' ? row.InvoiceAmount : null,
     listPaidAmount: typeof row.PaidAmount === 'number' ? row.PaidAmount : null,
     listInvoiceStatus: row.CombinedInvoiceStatus ?? null,
+    listInvoiceDueDate: dateOnly(row.InvoiceDueDate) ?? null,
     detailFetched: false,
     pendingDetail: false,
     docs: [],

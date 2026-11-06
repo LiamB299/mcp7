@@ -64,6 +64,8 @@ export interface CachedSale {
   listInvoiceAmount: number | null;
   listPaidAmount: number | null;
   listInvoiceStatus: string | null;
+  /** List `InvoiceDueDate` (yyyy-MM-dd). Optional: snapshots written before this field existed lack it. */
+  listInvoiceDueDate?: string | null;
   /** True when `docs` reflect `updated` (header-only sales are final when voided or not invoiced). */
   detailFetched: boolean;
   /** True when the sale is wanted (in window, invoiced) but its detail is not loaded yet. */

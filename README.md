@@ -53,8 +53,8 @@ A/B test: Claude Code + Bash + the key (baseline) vs the same with this MCP. Que
 | Tool | Inputs | Answers |
 |---|---|---|
 | `cin7_connection_check` | none | Credentials work; company, currency, time zone |
-| `receivables_overdue` | `asOf?` (yyyy-MM-dd, default today in tenant zone), `topN?` | Outstanding and overdue invoice balances, age buckets (1-30, 31-60, 61-90, 90+), largest overdue balances |
-| `sales_summary` | `groupBy` (`month` / `channel` / `customer`), `from?`, `to?`, `topN?` | Invoiced revenue and sale counts from Cin7's list rollup (`InvoiceAmount`), voided sales excluded; omit dates for all time |
+| `receivables_overdue` | `asOf?` (yyyy-MM-dd, default today in tenant zone), `topN?`, `refresh?`, `maxMinutes?` | Outstanding and overdue balances on the document basis (invoices minus paid minus credit notes, from the cache), age buckets (1-30, 31-60, 61-90, 90+), largest overdue balances, plus the un-netted and old list-rollup figures |
+| `sales_summary` | `groupBy` (`month` / `channel` / `customer`), `from?`, `to?`, `topN?`, `dateBasis?`, `refresh?`, `maxMinutes?` | Revenue (ex-tax and inc-tax, invoices minus credit notes, from the cache) and sale counts, voided sales excluded; `dateBasis` `document` (default) or `order`; omit dates for all time; the old list-rollup figure is returned alongside |
 | `stock_position` | `location?`, `topN?` | Stock value and units by location, top products by value, count of negative-available stock |
 | `order_lookup` | `orderNumber` | One sale by exact order number: stage (from sub-statuses), capped lines, fulfilment, invoices. **Personal contact data is dropped** (allow-list shaping) |
 | `open_orders_pipeline` | `includePurchases?` | Open sales by workflow stage, stuck counts (awaiting pick / ship / invoice / payment), purchase orders awaiting receipt, and how many sales the master status misdescribes |
@@ -69,7 +69,7 @@ Not built yet (prioritised in [`docs/research/prioritisation.md`](docs/research/
 
 - **TypeScript** on Node 22+, ESM; official **MCP SDK v2** (`@modelcontextprotocol/server`), **Zod v4** schemas for tool input and output ([ADR 0002](docs/adr/0002-typescript-mcp-sdk-v2.md)).
 - **stdio** transport (local Claude Code); native `fetch` for Cin7; no database, but a local JSON snapshot cache for line-level data ([ADR 0005](docs/adr/0005-line-level-snapshot-cache.md)). Streamable HTTP is deferred (ADR 0002).
-- Decisions are recorded as ADRs: [0001](docs/adr/0001-record-architecture-decisions.md) process, [0002](docs/adr/0002-typescript-mcp-sdk-v2.md) stack, [0003](docs/adr/0003-read-only-reports-mvp.md) reports MVP, [0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md) PII shaping and stage derivation, [0005](docs/adr/0005-line-level-snapshot-cache.md) line-level cache.
+- Decisions are recorded as ADRs: [0001](docs/adr/0001-record-architecture-decisions.md) process, [0002](docs/adr/0002-typescript-mcp-sdk-v2.md) stack, [0003](docs/adr/0003-read-only-reports-mvp.md) reports MVP, [0004](docs/adr/0004-pii-safe-shaping-and-stage-derivation.md) PII shaping and stage derivation, [0005](docs/adr/0005-line-level-snapshot-cache.md) line-level cache, [0006](docs/adr/0006-document-basis-reports.md) document-basis receivables and sales summary.
 - Tooling: vitest (unit tests with synthetic fixtures), Biome (lint and format), `tsc`, npm.
 - Implementation of individual tools is delegated to Haiku agents and reviewed (see `CLAUDE.md`).
 
@@ -100,15 +100,15 @@ Debug with `npm run inspect`. Re-run the evaluation after changing tools: see [`
 
 - **Sandbox only.** Built and tested against a Cin7 sandbox, which is small and synthetic. Production scale is untested.
 - **Personal data:** `order_lookup` uses allow-list shaping (no contact person, email, phone, addresses or free-text notes) and caps lines. Other tools return aggregates but can include customer business names. There is no global response-size budget yet.
-- **Line-level cache (ADR 0005).** `sales_by_sku` reads a local snapshot under `.cache/cin7` (override with `CIN7_CACHE_DIR`; gitignored). It holds business names, order lines and money, no contact data. First load is about 1.1 s per invoiced sale (about 160 s for the sandbox's 147), then refreshes are incremental. Revenue is a **document basis** (authorised invoices minus credit notes, ex-tax, by document date), unlike the older tools' list rollups. Results are labelled partial until the window is fully loaded.
+- **Line-level cache (ADR 0005).** `sales_by_sku`, `receivables_overdue` and `sales_summary` read a local snapshot under `.cache/cin7` (override with `CIN7_CACHE_DIR`; gitignored). It holds business names, order lines and money, no contact data. First load is about 1.1 s per invoiced sale (about 160 s for the sandbox's 147), then refreshes are incremental. Revenue is a **document basis** (authorised invoices minus credit notes, ex-tax, by document date), the same basis (document totals, tax-inclusive or ex-tax) is used by `receivables_overdue` and `sales_summary`, which also return Cin7's list rollup as a labelled alternative. Results are labelled partial until the window is fully loaded.
 - **Read-only.** Nothing writes to Cin7.
 - **Rate limit.** Requests are serialised at about 1 per 1.1 s; the key is shared with anyone else using it.
 
 ## Project status and how to resume
 
-All pull requests through #16 are merged; `master` is green (typecheck, lint, 194 tests, build). Ten tools, the snapshot cache, the evaluation harness (`eval/`, 11 pre-registered questions) and five ADRs exist. ADRs 0003, 0004 and 0005 are accepted provisionally, each with a "Progress and where to continue" section listing its gaps.
+`master` is green (typecheck, lint, 251 tests, build) once the document-basis PR is merged. Ten tools, the snapshot cache, the evaluation harness (`eval/`, 11 pre-registered questions) and six ADRs exist. ADRs 0003 to 0006 are accepted provisionally, each with a "Progress and where to continue" section listing its gaps.
 
-**Next, in order:** (1) move `receivables_overdue` and `sales_summary` onto the cache's document basis and re-evaluate against a document-based truth; (2) sales velocity and reorder suggestions on the cache; (3) explanations for negative stock; later, workflow writes (needs explicit consent and a confirmation design). Open items, user actions and unverified claims are tracked in the handoff document: [`docs/handoff/2026-11-06-cin7-mcp-roadmap.md`](docs/handoff/2026-11-06-cin7-mcp-roadmap.md) (index: [`docs/handoff/README.md`](docs/handoff/README.md)).
+**Next, in order:** (1) re-evaluate Q1 to Q3 against the document-based truth (`eval/truth-docs.mjs`, written, not yet run; needs approval); (2) sales velocity and reorder suggestions on the cache; (3) explanations for negative stock; later, workflow writes (needs explicit consent and a confirmation design). Open items, user actions and unverified claims are tracked in the handoff document: [`docs/handoff/2026-11-06-cin7-mcp-roadmap.md`](docs/handoff/2026-11-06-cin7-mcp-roadmap.md) (index: [`docs/handoff/README.md`](docs/handoff/README.md)).
 
 **Rules of engagement** (details in `CLAUDE.md` and [`docs/workflow-guide.md`](docs/workflow-guide.md)):
 - Feature branch per change, one PR straight into `master`, no stacked PRs, commit and push; the maintainer reviews and merges.

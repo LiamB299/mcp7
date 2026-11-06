@@ -1,6 +1,6 @@
 # ADR 0003: Read-only reports MVP for Claude Code (sandbox)
 
-- **Status:** accepted, provisional (the pre-registered kill criterion was not triggered; see [mvp-evaluation.md](../research/mvp-evaluation.md); final acceptance on merge)
+- **Status:** accepted, provisional (the pre-registered kill criterion was not triggered; see [mvp-evaluation.md](../research/mvp-evaluation.md); final acceptance on merge). The list-rollup basis of `receivables_overdue` and `sales_summary` is amended by [ADR 0006](0006-document-basis-reports.md).
 - **Date:** 2026-11-05
 
 ## Context
@@ -38,7 +38,7 @@ In-scope questions: MCP 10/10 correct vs baseline 8/10; baseline cost 1.8x and t
 <!-- retire-chat:progress:start -->
 ## Progress and where to continue (as of 2026-11-06)
 
-Built, evaluated in three waves, and corrected in #15: the original "correct" grade meant agreement with Cin7 list rollups, not with the invoice and credit-note documents (Q1: 43 overdue sales on documents versus 29 from the rollup; Q2 API channel 14,938 versus 10,349 or 16,088; Q3 top customer 54,625 versus 24,756). Gap verified in code: `receivables_overdue` and `sales_summary` still read the list rollups `InvoiceAmount` and `PaidAmount`; their descriptions now say so. Next: rebuild both on the cache document basis (`src/cache/query.ts` plus sync), rewrite the Q1 to Q3 truth from documents, re-run the evaluation (paid runs: ask first), then finalise acceptance or amend the ADR.
+Built, evaluated in three waves, and corrected in #15: the original "correct" grade meant agreement with Cin7 list rollups, not with the invoice and credit-note documents (Q1: 43 overdue sales on documents versus 29 from the rollup; Q2 API channel 14,938 versus 10,349 or 16,088; Q3 top customer 54,625 versus 24,756). Resolved by [ADR 0006](0006-document-basis-reports.md): both tools now read the cache documents and carry the list-rollup figure as a labelled alternative (live gate reproduced the old 29 / 26,447, 10,349 and 24,756 exactly and gave 43 overdue sales, 14,938 inc-tax API revenue and 54,625 for the top customer). Still open: re-run the evaluation against `eval/truth-docs.mjs` (not yet run; paid runs: ask first), then finalise acceptance or amend the ADR.
 
 Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-06-cin7-mcp-roadmap.md`.
 <!-- retire-chat:progress:end -->

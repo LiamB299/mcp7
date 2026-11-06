@@ -271,7 +271,7 @@ function sortValue(row: SkuRow, sortBy: 'revenue' | 'margin' | 'quantity'): numb
   return row.revenueExTax;
 }
 
-function isVoided(sale: CachedSale): boolean {
+export function isVoided(sale: CachedSale): boolean {
   return (sale.status ?? '').trim().toUpperCase() === 'VOIDED';
 }
 
@@ -282,34 +282,38 @@ function signOf(doc: CachedDoc): number {
   return 0;
 }
 
-function attributionDate(doc: CachedDoc, sale: CachedSale): string | null {
+export function attributionDate(doc: CachedDoc, sale: CachedSale): string | null {
   const date = doc.date ?? sale.orderDate;
   return date !== null && DATE_PATTERN.test(date) ? date : null;
 }
 
-function isInRange(date: string | null, from: string | undefined, to: string | undefined): boolean {
+export function isInRange(
+  date: string | null,
+  from: string | undefined,
+  to: string | undefined,
+): boolean {
   if (date === null) return from === undefined && to === undefined;
   if (from !== undefined && date < from) return false;
   if (to !== undefined && date > to) return false;
   return true;
 }
 
-function sumOf(values: number[]): number {
+export function sumOf(values: number[]): number {
   return values.reduce((total, value) => total + value, 0);
 }
 
-function compareText(a: string, b: string): number {
+export function compareText(a: string, b: string): number {
   if (a < b) return -1;
   if (a > b) return 1;
   return 0;
 }
 
 /** Rounds to 2 dp; the `+ 0` turns -0 into 0. */
-function round2(value: number): number {
+export function round2(value: number): number {
   return Math.round(value * 100) / 100 + 0;
 }
 
 /** Rounds to 4 dp; the `+ 0` turns -0 into 0. */
-function round4(value: number): number {
+export function round4(value: number): number {
   return Math.round(value * 10000) / 10000 + 0;
 }

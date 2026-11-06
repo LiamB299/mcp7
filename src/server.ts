@@ -25,8 +25,8 @@ export function createServer({ cin7, store }: ServerDeps): McpServer {
     { capabilities: { tools: {} } },
   );
   registerConnectionCheck(server, cin7);
-  registerReceivablesOverdue(server, cin7);
-  registerSalesSummary(server, cin7);
+  registerReceivablesOverdue(server, cin7, store);
+  registerSalesSummary(server, cin7, store);
   registerStockPosition(server, cin7);
   registerOrderLookup(server, cin7);
   registerOpenOrdersPipeline(server, cin7);

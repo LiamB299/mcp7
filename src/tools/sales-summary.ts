@@ -13,7 +13,7 @@ interface SaleListRow {
   Status?: string | null;
   OrderDate?: string | null;
   SourceChannel?: string | null;
-  /** Net of credit notes; 0 (or null) when not yet invoiced. */
+  /** Cin7 list rollup, documented as net of credit notes; 0 (or null) when not yet invoiced. */
   InvoiceAmount?: number | null;
   BaseCurrency?: string | null;
 }
@@ -35,7 +35,7 @@ const TOOL_DEFINITION = [
   'Sales with OrderDate (date part) in [from, to], both inclusive; from and to are optional (omitted = open-ended, both omitted = all time). Status VOIDED is excluded.',
   'Undated sales (no parsable OrderDate) are included only when no date bound is given; with groupBy month they group under "(no date)".',
   'saleCount = non-void sales in the group (uninvoiced sales included).',
-  'invoicedTotal = sum of InvoiceAmount, net of credit notes; uninvoiced sales (0) add nothing; rounded to 2 dp.',
+  'invoicedTotal = sum of the Cin7 list rollup InvoiceAmount (documented as net of credit notes; in the sandbox it differs from invoice and credit-note documents on about 30% of sales); uninvoiced sales (0) add nothing; rounded to 2 dp.',
   'groupBy month = OrderDate yyyy-MM, ascending, all months returned.',
   'groupBy channel = SourceChannel, "(none)" when null or empty; groupBy customer = grouped by CustomerID.',
   'channel and customer are sorted by invoicedTotal then saleCount, descending; the top topN are kept and the rest rolled into `other`.',

@@ -92,6 +92,7 @@ When a claim matters, test it against a **pre-registered kill criterion** rather
 | An exact-label grader would have scored correct baseline answers wrong (for example "None" vs "(none)"), biasing the eval toward the MCP | Make graders label-agnostic and smoke-test the harness before spending |
 | A narrow tool declined an out-of-scope question | Coverage is the product; plan which questions you must answer |
 | Stacked PRs merged into their parent branches, so `master` missed the work twice and a consolidation round was needed | Base every branch on `origin/master` and open one PR per change straight into `master`; avoid stacks unless the parent merges first |
+| An eval's ground truth was computed from the same list fields the tool reads, so it could not catch the tool being wrong (the list rollups disagree with documents on about 30% of sales) | Build truth from an independent source (documents, not rollups); say what a "correct" grade actually tests; re-check headline claims when new evidence arrives |
 | An assumption ("line totals are ex-tax") held on only 100 of 164 invoices and would have shipped as a bug; splitting the check by tax mode on raw data found the inclusive-pricing exception first | Verify definitions against raw data, split by the obvious variants, before writing code that depends on them |
 | Haiku typed Cin7 ids as numbers (real ids are GUID strings) | Put verified field facts and shared row types in the brief and the repo (`src/cin7/types.ts`); live-check every tool |
 
@@ -116,6 +117,7 @@ When a claim matters, test it against a **pre-registered kill criterion** rather
 
 | Date | Change |
 |---|---|
+| 2026-11-06 | Correction: eval truth for Q1-Q3 shared the tool's list-rollup basis; headline correctness reframed, tool wording fixed (PR `fix/list-basis-wording`). |
 | 2026-11-06 | Cache build: definition checks on raw data before coding (caught tax-inclusive line totals, non-base currencies, document dates); pre-registered Q11 with cold/warm runs; main model wrote the privacy- and concurrency-critical core (schema, extractor, store, sync), Haiku agents the pure query and tools. |
 | 2026-11-06 | Wave 2: single-PR-to-master rule; row types shared in `src/cin7/types.ts`; stage and shaping logic written by the main model, tools by Haiku agents; eval questions pre-registered before running. |
 | 2026-11-05 | Guide created from project history so far and the usage review. Covers: loop, roles, conventions, Haiku briefs, preflight, lessons. |

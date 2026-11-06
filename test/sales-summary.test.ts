@@ -159,7 +159,7 @@ describe('sales_summary', () => {
     expect(out.invoicedTotal).toBe(550.3);
   });
 
-  it('sums negative InvoiceAmount values as given (net of credit notes)', async () => {
+  it('sums negative InvoiceAmount values as given by Cin7', async () => {
     const rows = [sale({ InvoiceAmount: 100 }), sale({ InvoiceAmount: -40.25 })];
     const res = await callSummary(rows, { from: '2026-01-01', to: '2026-01-31', groupBy: 'month' });
     const out: Out = res.structuredContent;

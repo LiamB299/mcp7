@@ -2,6 +2,23 @@
 
 Run 2026-11-05. Protocol pre-registered in [`eval/README.md`](../../eval/README.md) and [`eval/questions.json`](../../eval/questions.json) before any run; decision in [ADR 0003](../adr/0003-read-only-reports-mvp.md). Numbers only: transcripts hold customer data and stay local (`eval/out/`, gitignored).
 
+## Correction (2026-11-06): "correct" meant "agrees with the list rollup", not "agrees with the documents"
+
+The line-cache spike ([line-cache-spike.md](line-cache-spike.md)) loaded every sale detail and showed that Cin7's list rollups (`InvoiceAmount`, `SaleInvoicesTotalAmount`) disagree with the invoice and credit-note documents on about 30% of sandbox sales. The ground truth for Q1-Q3 was computed from the same list rollup the tool reads, so it could not validate the tool. Recomputing on a **document basis** (authorised or paid invoices minus authorised credit notes, from the 173 details):
+
+| Question | Tool (list `InvoiceAmount`) | Baseline (mostly list `SaleInvoicesTotalAmount`) | Document basis |
+|---|---|---|---|
+| Q1 overdue sales | 29 sales, 26,447 (both arms, all 4 runs) | same | **43 sales**, about 83,700 to 86,600 (two outstanding definitions) |
+| Q2 API-channel revenue, Jul-Sep | 10,349 | 16,088 | **14,938** tax-inclusive net (14,195 ex-tax) |
+| Q3 top customer's amount | 24,756 | 24,756 (run 1), 57,500 (run 2) | **54,625** tax-inclusive net |
+
+What this changes:
+- The two arms agreed with **different list rollups**. `SaleInvoicesTotalAmount` equals authorised invoice totals (gross of credit notes) on 142 of 164 sales, so the baseline's "invoiced revenue" answers were a defensible reading, not a trap. The earlier label "fell into the gross-vs-net trap" is retracted.
+- On a document basis **neither arm matched on Q1**; on Q2 and Q3 the baseline's answers were **closer** to the documents than the tool's (Q2: baseline +7.7%, tool -30.7%; Q3 top customer: baseline run 2 +5.3%, tool -54.7%). The list rollup understates the largest customer's revenue.
+- The headline "10/10 vs 8/10 correct" therefore measures agreement with a stated list-rollup definition. It does **not** show the tool is more accurate on revenue questions; on those it was less accurate in this sandbox.
+- What still stands: speed (about 2.1 to 2.5x), answering the same way every time, the status-based and stock questions (Q6-Q10, whose truth used list statuses and availability, a weaker check than documents but not contradicted by the spike), and key isolation.
+- Follow-ups: the tools now state their basis (this PR); the cache (ADR 0005) enables a document basis; the next evaluation question, "revenue by SKU", will use a document-basis truth built from sale details.
+
 ## Setup (recap)
 - 6 questions (5 in scope, Q6 deliberately outside the MVP tools), 2 runs per question per arm = 24 headless Claude runs, sequential, same model (Sonnet), same permissions, run from an empty directory outside the repo.
 - **Baseline:** Bash + `CIN7_*` environment variables + a pointer to the API docs. **Treatment:** the MCP only; the key is not in the environment (the server loads `.env` itself).
@@ -13,7 +30,7 @@ Run 2026-11-05. Protocol pre-registered in [`eval/README.md`](../../eval/README.
 | Measure | Baseline (Bash + key) | Treatment (MCP) | Ratio |
 |---|---|---|---|
 | Correct | **8 / 10** | **10 / 10** | |
-| Fell into the gross-vs-net invoice trap | 2 (Q2 and Q3, one run each) | 0 | |
+| Used `SaleInvoicesTotalAmount` instead of `InvoiceAmount` (graded "alt-gross"; see correction above) | 2 (Q2 and Q3, one run each) | 0 | |
 | Cost, total | $0.345 | $0.190 | 1.8x |
 | Duration, total | 150 s | 61 s | 2.5x |
 | Duration, per run | 15.0 s | 6.1 s | |
@@ -41,7 +58,7 @@ Pre-registered: *if the baseline is at least as correct and within about 1.5x of
 
 ## What this supports, and what it does not
 Supported (on this sample):
-1. **Correctness.** The baseline sometimes read gross invoices instead of net-of-credit-note amounts (2 of 4 runs on Q2/Q3, though it avoided the trap on Q1). The tools encode the definition, so the treatment never differed.
+1. **Definitional consistency.** The baseline sometimes chose a different list rollup (`SaleInvoicesTotalAmount`) than the tool's `InvoiceAmount` (2 of 4 runs on Q2/Q3). The tool states and applies one definition every time. **Correction:** against invoice and credit-note documents the tool was not more accurate on the revenue questions (see above).
 2. **Speed.** About 2.5x faster per question; the baseline writes and runs curl/aggregation code each time.
 3. **Key isolation, structurally.** The treatment arm had no access to the key. The baseline never printed it (0 literal hits in both arms), so this is an exposure difference, not an observed leak.
 4. **Repeatability.** The treatment answered identically across the 2 runs of every in-scope question; the baseline varied on 2 of 5.
@@ -84,7 +101,7 @@ New in scope: **Q6** purchase orders awaiting receipt (was out of scope), **Q7**
 | Q | Baseline grades | Treatment grades |
 |---|---|---|
 | Q1 | correct | correct |
-| Q2 | alt-gross (net-vs-gross trap) | correct |
+| Q2 | alt-gross (used `SaleInvoicesTotalAmount`; see correction) | correct (list rollup) |
 | Q3, Q4, Q5 | correct | correct |
 | Q6 awaiting receipt | wrong, wrong (both answered 60) | correct, correct |
 | Q7 unpicked open sales | correct, correct | correct, correct |
@@ -96,7 +113,7 @@ New in scope: **Q6** purchase orders awaiting receipt (was out of scope), **Q7**
 
 - **Kill criterion not triggered.** The baseline was less correct (12/15 vs 15/15). On this wave the cost ratio (1.38x) is *below* the 1.5x line, so cost no longer separates the arms; correctness and speed (2.1x) carry the case.
 - **Q6 is a definition ambiguity, not a hard error.** Both baseline runs counted status ORDERED only (60) and said so; the pre-registered primary reading is ORDERED, RECEIVING or INVOICED with goods not fully received (65). 60 was not among the three recorded readings, so the strict grade is "wrong". Counting it as an accepted reading makes the baseline 14/15. The treatment's advantage here is a stated, consistent definition, not superior reasoning.
-- **The stage normaliser's headline trap did not separate the arms.** Q7 (master status ORDERED vs sub-statuses) and Q10 (shipped despite ORDERED) were answered correctly by the baseline in all four runs: Sonnet reads the sub-statuses when the question says "picked" or "shipped". The only hard baseline miss was again net-vs-gross invoices (Q2). The normaliser is verified against independent truth (52 / 31 / 65 exact) and still removes a real hazard for broader questions, but this evaluation does not demonstrate its value on its own.
+- **The stage normaliser's headline trap did not separate the arms.** Q7 (master status ORDERED vs sub-statuses) and Q10 (shipped despite ORDERED) were answered correctly by the baseline in all four runs: Sonnet reads the sub-statuses when the question says "picked" or "shipped". The only baseline miss against the list-rollup definitions was the choice of rollup on Q2 (see the correction above). The normaliser is verified against independent truth (52 / 31 / 65 exact) and still removes a real hazard for broader questions, but this evaluation does not demonstrate its value on its own.
 - **Personal-data protection is not measured by this eval.** The questions needed only totals and shipped state. It is verified by unit tests (no email, phone, address, contact or note text leaves `maskSale`) and by the live gate (no such keys in `order_lookup` output).
 - Treatment runs always show 2 tool calls (a tool-discovery step, then the tool); one run (Q5) used 4 turns because it called two tools.
 - Same caveats as before: same author for tools and questions, n of 1-2 per cell, one model, small synthetic sandbox, generous baseline context.

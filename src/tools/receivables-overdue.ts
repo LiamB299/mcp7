@@ -50,8 +50,11 @@ const outputSchema = z.object({
 });
 
 const DEFINITION = [
+  'Basis: Cin7 saleList rollup fields, not a reconciliation of invoice and credit-note documents.',
   'Receivables = saleList rows whose Status is not VOIDED and whose outstanding balance',
-  '(InvoiceAmount - PaidAmount, net of credit notes and refunds, rounded to 2 dp) is above 0.005.',
+  '(InvoiceAmount - PaidAmount, rounded to 2 dp; Cin7 documents InvoiceAmount as net of credit notes',
+  'and PaidAmount as net of refunds) is above 0.005.',
+  'In the sandbox these rollups differ from the document totals on about 30% of sales, so treat results as the list rollup.',
   'Overpaid or fully credited rows (zero or negative balance) are ignored, not netted against others.',
   'Overdue = receivable whose InvoiceDueDate (date part) is strictly before asOf.',
   'Receivables with no due date are counted under noDueDate, not overdue.',

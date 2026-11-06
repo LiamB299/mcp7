@@ -16,7 +16,7 @@ Deferred on purpose: PII masking, response-size budgets, the snapshot cache, the
 ## Why this should add value over Claude Code + Bash (testable claims)
 1. **Correctness.** The tools encode traps a naive script falls into (measured on the sandbox):
    - pagination (173 sales, default `Limit` 100);
-   - `InvoiceAmount` is net of credit notes: reading gross invoices gives 39 overdue sales instead of 29, and API-channel revenue of 16,088 instead of 10,349;
+   - two different list rollups exist: `InvoiceAmount` (documented as net of credit notes) and `SaleInvoicesTotalAmount` (gross invoices); choosing one gives 29 overdue sales or 39, and API-channel revenue of 10,349 or 16,088. **Correction (2026-11-06):** neither equals the invoice and credit-note documents, which give 43 overdue sales and 14,938 (tax-inclusive net) for the API channel; the "trap" measured agreement with the list rollup definition, not document-level truth;
    - `StockOnHand` is a value, not units (misreading it yields 14,808 instead of 2,080,604);
    - tenant timezone for "today".
 2. **Cost.** One tool call instead of discovering endpoints, writing paging code and aggregating: fewer turns, tokens and seconds.
@@ -33,4 +33,4 @@ Pre-registered in `eval/questions.json` and `eval/README.md`: six questions (one
 - Tool outputs currently include customer names and are not size-budgeted; acceptable for a sandbox-only Claude Code server, to be revisited before anything wider.
 
 ## Evaluation result (2026-11-05)
-In-scope questions: MCP 10/10 correct vs baseline 8/10; baseline cost 1.8x and time 2.5x the MCP's. Kill criterion not triggered. Absolute savings are small (cents, seconds); the clearest advantage is correctness on definition traps and speed. Out-of-scope questions get no answer from a narrow MCP, so tool coverage matters. Details and caveats in [mvp-evaluation.md](../research/mvp-evaluation.md).
+In-scope questions: MCP 10/10 correct vs baseline 8/10; baseline cost 1.8x and time 2.5x the MCP's. Kill criterion not triggered. Absolute savings are small (cents, seconds); the clearest advantage is agreement with a stated definition on definition traps and speed. Out-of-scope questions get no answer from a narrow MCP, so tool coverage matters. Details and caveats in [mvp-evaluation.md](../research/mvp-evaluation.md).

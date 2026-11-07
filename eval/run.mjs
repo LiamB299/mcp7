@@ -14,7 +14,7 @@ const truth = JSON.parse(readFileSync(`${root}eval/out/truth.json`));
 // Document-basis truth for Q1-Q3 (eval/truth-docs.mjs). When present it replaces the list-basis grading of Q1-Q3.
 const docsPath = `${root}eval/out/truth-docs.json`;
 const docsTruth = existsSync(docsPath) ? JSON.parse(readFileSync(docsPath)) : null;
-const qs = JSON.parse(readFileSync(`${root}eval/questions.json`)).questions.filter((q) => !only.length || only.includes(q.id)).map((q) => ({ ...q, text: q.text.replace('{ORDER_NUMBER}', truth.Q10?.orderNumber ?? '') }));
+const qs = JSON.parse(readFileSync(`${root}eval/questions.json`)).questions.filter((q) => (!only.length && !q.deferred) || only.includes(q.id)).map((q) => ({ ...q, text: q.text.replace('{ORDER_NUMBER}', truth.Q10?.orderNumber ?? '') }));
 const cwd = '/private/tmp/evalcwd'; // empty dir outside the repo: no CLAUDE.md, docs or src visible
 mkdirSync(cwd, { recursive: true }); mkdirSync(`${root}eval/out/runs`, { recursive: true });
 writeFileSync(`${cwd}/none.json`, '{"mcpServers":{}}');

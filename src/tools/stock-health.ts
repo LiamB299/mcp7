@@ -4,7 +4,7 @@ import { type Cin7Client, Cin7Error } from '../cin7/client.js';
 import { listAll } from '../cin7/paginate.js';
 import type { AvailabilityRow, ProductRow } from '../cin7/types.js';
 import { dataAsOf } from '../shape.js';
-import { aggregateAvailability, num, productKey } from '../stock/availability.js';
+import { aggregateAvailability, isStockProduct, num, productKey } from '../stock/availability.js';
 
 const inputSchema = z.object({
   topN: z
@@ -43,6 +43,7 @@ const outputSchema = z.object({
       withOpenOrder: z.number().int(),
       productsWithThreshold: z.number().int(),
       productsScanned: z.number().int(),
+      nonStockExcluded: z.number().int(),
       top: z.array(
         z.object({
           ...skuName,
@@ -74,7 +75,8 @@ const DEFINITION =
   'aggregated by product ID. negativeAvailable: rows with Available < 0, and products whose summed ' +
   'Available < 0 (a negative row can net out at product level). onOrderNothingOnHand: products with ' +
   'summed OnHand = 0 and summed OnOrder > 0. belowReorderPoint (null if includeReorder is false): ' +
-  'products with product-level MinimumBeforeReorder > 0 whose summed Available (0 if no rows) is at or ' +
+  'stock products (Service and deprecated products are excluded: they hold no stock) with product-level ' +
+  'MinimumBeforeReorder > 0 whose summed Available (0 if no rows) is at or ' +
   'below that minimum; withOpenOrder counts those with summed OnOrder > 0; top sorted by ' +
   'available minus minimum, ascending. formulaMismatchRows: rows where |Available - (OnHand - ' +
   'Allocated)| > 0.0001, sorted by size of mismatch; the cause is UNVERIFIED (possibly assembly/BOM ' +
@@ -95,7 +97,8 @@ export function registerStockHealth(server: McpServer, cin7: Cin7Client): void {
         'where Available does not equal OnHand minus Allocated (cause unverified). Each check gives a ' +
         'count and a short top list. Read-only. Reads every page of ref/productavailability; when ' +
         'includeReorder is true (default) it also reads every page of the product list, about 2 large ' +
-        'calls at 1000 per page. Set includeReorder to false to skip that second read.',
+        'calls at 1000 per page (Service and deprecated products are excluded from the reorder check). ' +
+        'Set includeReorder to false to skip that second read.',
       inputSchema,
       outputSchema,
       annotations: { readOnlyHint: true, openWorldHint: true },
@@ -128,7 +131,8 @@ export function registerStockHealth(server: McpServer, cin7: Cin7Client): void {
         // 3. Below reorder point (product-level top-level fields, not ReorderLevels).
         let belowReorderPoint: z.infer<typeof outputSchema>['belowReorderPoint'] = null;
         if (includeReorder) {
-          const withThreshold = products.rows.filter((p) => num(p.MinimumBeforeReorder) > 0);
+          const stockProducts = products.rows.filter(isStockProduct);
+          const withThreshold = stockProducts.filter((p) => num(p.MinimumBeforeReorder) > 0);
           const below = withThreshold
             .map((p) => {
               const agg = aggs.get(productKey(p));
@@ -151,6 +155,7 @@ export function registerStockHealth(server: McpServer, cin7: Cin7Client): void {
             withOpenOrder: below.filter((p) => p.onOrder > EPS).length,
             productsWithThreshold: withThreshold.length,
             productsScanned: products.rows.length,
+            nonStockExcluded: products.rows.length - stockProducts.length,
             top: below.slice(0, topN).map((p) => ({
               sku: p.sku,
               name: p.name,

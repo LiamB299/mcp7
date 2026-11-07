@@ -188,6 +188,27 @@ describe('stock_health', () => {
     ]);
   });
 
+  it('excludes Service and deprecated products from the reorder check and counts them', async () => {
+    const client = await connect(
+      stub({
+        rows: [avail({ ID: 'stockLow', OnHand: 1, Available: 1 })],
+        products: [
+          prod({ ID: 'stockLow', MinimumBeforeReorder: 5, Type: 'Stock' }),
+          // A threshold on a service product with no stock rows must not read as "below reorder point".
+          prod({ ID: 'svc', MinimumBeforeReorder: 3, Type: ' Service ' }),
+          prod({ ID: 'old', MinimumBeforeReorder: 3, Type: 'Stock', Status: 'Deprecated' }),
+          prod({ ID: 'noType', MinimumBeforeReorder: 0 }),
+        ],
+      }),
+    );
+    const { belowReorderPoint } = (await callHealth(client)).structuredContent;
+    expect(belowReorderPoint.productsScanned).toBe(4);
+    expect(belowReorderPoint.nonStockExcluded).toBe(2);
+    expect(belowReorderPoint.productsWithThreshold).toBe(1);
+    expect(belowReorderPoint.count).toBe(1);
+    expect(belowReorderPoint.top.map((r: { sku: string }) => r.sku)).toEqual(['SKU-stockLow']);
+  });
+
   it('uses the top-level MinimumBeforeReorder and ignores an empty or populated ReorderLevels list', async () => {
     const product = {
       ...prod({ ID: 'p', MinimumBeforeReorder: 5 }),
@@ -296,6 +317,7 @@ describe('stock_health', () => {
         withOpenOrder: 0,
         productsWithThreshold: 0,
         productsScanned: 0,
+        nonStockExcluded: 0,
       },
       formulaMismatchRows: { count: 0, top: [] },
     });

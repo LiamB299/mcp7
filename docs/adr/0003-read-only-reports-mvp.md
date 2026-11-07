@@ -36,9 +36,9 @@ Pre-registered in `eval/questions.json` and `eval/README.md`: six questions (one
 In-scope questions: MCP 10/10 correct vs baseline 8/10; baseline cost 1.8x and time 2.5x the MCP's. Kill criterion not triggered. Absolute savings are small (cents, seconds); the clearest advantage is agreement with a stated definition on definition traps and speed. Out-of-scope questions get no answer from a narrow MCP, so tool coverage matters. Details and caveats in [mvp-evaluation.md](../research/mvp-evaluation.md).
 
 <!-- retire-chat:progress:start -->
-## Progress and where to continue (as of 2026-11-06)
+## Progress and where to continue (as of 2026-11-07)
 
-Built, evaluated in three waves, and corrected in #15: the original "correct" grade meant agreement with Cin7 list rollups, not with the invoice and credit-note documents (Q1: 43 overdue sales on documents versus 29 from the rollup; Q2 API channel 14,938 versus 10,349 or 16,088; Q3 top customer 54,625 versus 24,756). Resolved by [ADR 0006](0006-document-basis-reports.md): both tools now read the cache documents and carry the list-rollup figure as a labelled alternative (live gate reproduced the old 29 / 26,447, 10,349 and 24,756 exactly and gave 43 overdue sales, 14,938 inc-tax API revenue and 54,625 for the top customer). Still open: re-run the evaluation against `eval/truth-docs.mjs` (not yet run; paid runs: ask first), then finalise acceptance or amend the ADR.
+Built, evaluated in four waves and corrected twice. The first correction (#15) separated agreement with Cin7 list rollups from agreement with the invoice and credit-note documents. The gap it left (both tools still read the rollups) is closed by ADR 0006: `receivables_overdue` and `sales_summary` now read cache documents and return the list-rollup figure as a labelled alternative, and wave 4 re-graded Q1 to Q3 on a document-basis truth (treatment 3 of 3, baseline 0 of 3, one run per arm). Remaining: more repetitions and a warm-cache timing (register R15). No further work on this ADR is planned.
 
-Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-06-cin7-mcp-roadmap.md`.
+Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-07-mvp-closed.md`.
 <!-- retire-chat:progress:end -->

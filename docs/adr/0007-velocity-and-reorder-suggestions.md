@@ -30,7 +30,9 @@ New read-only tool `reorder_suggestions` (`src/tools/reorder-suggestions.ts`) on
 - Negative available stock counts as a shortfall in the suggested quantity even with no sales.
 
 <!-- retire-chat:progress:start -->
-## Progress and where to continue (as of 2026-11-06)
+## Progress and where to continue (as of 2026-11-07)
 
-Built and live-gated (above). Follow-up done: `stock_health` now skips Service and deprecated products through the shared `isStockProduct` rule, so its reorder-point count is 6 and matches this tool (live check on the sandbox, read-only: 6 below threshold, 3 of them with an open order, 98 stock products with a threshold, 17 non-stock products excluded out of 1,627). Decision: **Q12 is deferred, not run** (reorder quality is not evaluable on this sparse sandbox: 3 products sold in the last 90 days and none would stock out, so the truth's top 3 would be threshold-only products to order 0 units of); `eval/questions.json` marks it `deferred`, `eval/run.mjs` skips it unless named in `--only`, and `eval/truth-reorder.mjs` is kept for production-like data. Not done: (1) open-order lines are not cached, so demand from uninvoiced orders is missing (register R4); (2) supplier lead times are not read; (3) ranking quality is untested on realistic data.
+Built and live-gated (product-ID join matched every product with sales; velocity totals equal `sales_by_sku` quantity exactly; threshold parity 6 = 6 after `stock_health` was changed to skip Service products). Decision: Q12 is deferred, not run, because reorder quality is not evaluable on this sparse sandbox (3 products sold in the last 90 days, none would stock out, so the truth's top 3 would be threshold-only products to order 0 units of); `eval/questions.json` marks it `deferred`, `eval/run.mjs` skips it unless named in `--only`, and `eval/truth-reorder.mjs` is kept for production-like data (R2). Gaps: open-order lines are not cached, so demand from uninvoiced orders is missing (R1); supplier lead times are not read (R14); ranking quality is untested on realistic data.
+
+Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-07-mvp-closed.md`.
 <!-- retire-chat:progress:end -->

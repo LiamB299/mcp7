@@ -4,6 +4,7 @@ Dated handoff documents written when a long Claude Code chat is retired, so a fr
 
 | Date | Document | Focus of the next session |
 |---|---|---|
+| 2026-11-07 | [2026-11-07-mvp-closed.md](2026-11-07-mvp-closed.md) | MVP closed; the deferred roadmap (negative-stock explanations, writes only with new consent, production-scale checks) and the follow-ups in its register |
 | 2026-11-06 | [2026-11-06-cin7-mcp-roadmap.md](2026-11-06-cin7-mcp-roadmap.md) | Move the two list-rollup tools to the cache document basis, then velocity/reorder and negative-stock explanations |
 
 Each document contains: snapshot, a summary of every ADR (decisions, commits, PRs, code, progress and where to continue), the codebase map, the conversation summary with a user-request ledger, agreements and rules, findings and corrections, an open-work register, environment and resuming notes, and a completeness check.

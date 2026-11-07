@@ -15,8 +15,13 @@ Quick checklist for you. Context: [`docs/handoff/2026-11-06-cin7-mcp-roadmap.md`
 
 ## Done 2026-11-06 (second session)
 - R15 approved (`.claude/settings.local.json`, gitignored; `cin7-core` connected). R16: 16 stale branches deleted, remote and local. R17: `eval/out/`, old scratchpad data, `/tmp/s`, `/tmp/run.py`, `/private/tmp/evalcwd` removed. R18: R1 chosen and built (ADR 0006, PR `feat/document-basis-reports`).
-- Still yours: **R14** (rotate the sandbox key).
+- Still yours: **R14** (rotate the sandbox key; you chose to skip it for now).
 - R2 done on your go-ahead: truth pulls and a one-rep Q1 to Q3 run (about 0.28 US dollars notional): treatment 3 of 3 correct, baseline 0 of 3 (wave 4 in `docs/research/mvp-evaluation.md`). More repetitions need your approval.
 
+## Done 2026-11-06 (third session)
+- **No writes to Cin7 this iteration** (your rule, also in memory): no write probes (R9 stays unverified), no write tools (R5).
+- R3 done: `reorder_suggestions` (ADR 0007, PR #21). Live gate: join verified, quantity parity exact; `stock_health` counts 3 Service products as below threshold (follow-up).
+- Open from this: **revise Q12** before any run (it cannot discriminate on this sandbox as written), then ask for approval to run `eval/truth-reorder.mjs`; fix `stock_health` to skip Service products; R4 (negative-stock explanations) needs open-order lines in the cache.
+
 ## Starter prompt for the new session
-> Read `docs/handoff/2026-11-06-cin7-mcp-roadmap.md` (sections 0, 2 and 7), `docs/adr/0006-document-basis-reports.md`, `README.md` and `CLAUDE.md`. Then plan with me the next step: either the document-basis re-evaluation (R2, ask me before running anything) or velocity and reorder suggestions on the cache (R3). Use plan mode, an advisor check, and Haiku agents with high effort. Do not run evaluations or write to the sandbox without asking.
+> Read `docs/handoff/2026-11-06-cin7-mcp-roadmap.md` (sections 0, 2 and 7; it predates R1 to R3, so also read ADR 0006 and 0007), `README.md` and `CLAUDE.md`. Then plan with me the next step: revise Q12 and (with my approval) evaluate `reorder_suggestions`, fix `stock_health` to skip Service products, or negative-stock explanations (R4, needs open-order lines in the cache). No writes to Cin7 this iteration. Use plan mode, an advisor check, and Haiku agents with high effort. Do not run evaluations without asking.

@@ -8,6 +8,18 @@ export const num = (n: number | null | undefined): number =>
 export const availKey = (r: AvailabilityRow): string => r.ID ?? r.SKU ?? '';
 export const productKey = (p: ProductRow): string => p.ID ?? p.SKU ?? '';
 
+/**
+ * Products that can hold stock: not `Service` and not deprecated (trimmed, case-insensitive). Service
+ * products have no availability rows, so treating them as stock reads as "available 0, below threshold".
+ * Shared by stock_health and reorder_suggestions.
+ */
+export function isStockProduct(p: ProductRow): boolean {
+  const type = typeof p.Type === 'string' ? p.Type.trim().toLowerCase() : '';
+  if (type === 'service') return false;
+  const status = typeof p.Status === 'string' ? p.Status.trim().toLowerCase() : '';
+  return status !== 'deprecated';
+}
+
 /** Per-product stock summed over locations, bins and batches. */
 export interface StockAgg {
   sku: string;

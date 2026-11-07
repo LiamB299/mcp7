@@ -1,6 +1,6 @@
 # ADR 0007: Sales velocity and reorder suggestions
 
-- **Status:** accepted, provisional (live gate passed; not yet evaluated against an independent truth)
+- **Status:** accepted, provisional (live gate passed; evaluation deferred: not evaluable on this sandbox)
 - **Date:** 2026-11-06
 
 ## Context
@@ -21,7 +21,7 @@ New read-only tool `reorder_suggestions` (`src/tools/reorder-suggestions.ts`) on
 ## Live gate (2026-11-06, sandbox, read-only GETs, scratch cache)
 - **Join:** every product with velocity matched a product (3 of 3 in a 90-day window, 6 of 6 over 730 days; 0 unmatched), so sale-line `productId` equals the product `ID`.
 - **Quantity parity:** velocity totals equal `sales_by_sku` quantity exactly for the same window (31 and 232 units).
-- **Threshold parity:** the tool finds 6 products below threshold against `stock_health`'s 9. The difference is exactly the 3 `Service` products that have a threshold and no stock rows (the product list has 17 Service products and 1 gift card out of 1,627): `stock_health` counts them as at available 0, which is a false positive for a non-stock item. This tool's exclusion is intended; `stock_health` is unchanged (follow-up below).
+- **Threshold parity:** the tool finds 6 products below threshold against `stock_health`'s 9. The difference is exactly the 3 `Service` products that have a threshold and no stock rows (the product list has 17 Service products and 1 gift card out of 1,627): `stock_health` counts them as at available 0, which is a false positive for a non-stock item. This tool's exclusion is intended; `stock_health` was changed afterwards to skip Service products too (see Progress).
 - **Sparse sales:** only 3 products sold in the last 90 days and 6 in two years; no product would stock out within a 14-day lead time. The sandbox shows the mechanics but cannot show a real replenishment picture. First load took 35 s (90-day window) and 138 s (730 days).
 
 ## Consequences
@@ -32,5 +32,5 @@ New read-only tool `reorder_suggestions` (`src/tools/reorder-suggestions.ts`) on
 <!-- retire-chat:progress:start -->
 ## Progress and where to continue (as of 2026-11-06)
 
-Built and live-gated (above). Not done: (1) `eval/truth-reorder.mjs` and the pre-registered Q12 are written but not run, and `eval/run.mjs` does not grade Q12 yet (a run needs the maintainer's approval). **Q12 cannot discriminate on this sandbox as written**: in the 90-day window no product with sales is a candidate, so the truth's top 3 are threshold-only products with a suggested quantity of 0, and a sensible answer (order up to the minimum, or use the reorder quantity) would be graded wrong. Revise Q12 (for example a window and parameters that surface velocity-driven candidates, or accept the reorder-quantity reading) before any run; nothing has run yet, so revising is still pre-registration; (2) `stock_health` still counts Service products below threshold (3 of its 9 in the sandbox): fix and re-verify its parity figure; (3) open-order lines are not cached, so demand from uninvoiced orders is missing (register R4); (4) supplier lead times are not read; (5) the sandbox is too sparse to show stock-outs, so ranking quality is untested on realistic data.
+Built and live-gated (above). Follow-up done: `stock_health` now skips Service and deprecated products through the shared `isStockProduct` rule, so its reorder-point count is 6 and matches this tool (live check on the sandbox, read-only: 6 below threshold, 3 of them with an open order, 98 stock products with a threshold, 17 non-stock products excluded out of 1,627). Decision: **Q12 is deferred, not run** (reorder quality is not evaluable on this sparse sandbox: 3 products sold in the last 90 days and none would stock out, so the truth's top 3 would be threshold-only products to order 0 units of); `eval/questions.json` marks it `deferred`, `eval/run.mjs` skips it unless named in `--only`, and `eval/truth-reorder.mjs` is kept for production-like data. Not done: (1) open-order lines are not cached, so demand from uninvoiced orders is missing (register R4); (2) supplier lead times are not read; (3) ranking quality is untested on realistic data.
 <!-- retire-chat:progress:end -->

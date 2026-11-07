@@ -1,7 +1,7 @@
 import { compareText, round2, round4, sumOf } from './cache/query.js';
 import type { VelocityEntry, VelocityResult } from './cache/velocity.js';
 import type { ProductRow } from './cin7/types.js';
-import { num, productKey, type StockAgg } from './stock/availability.js';
+import { isStockProduct, num, productKey, type StockAgg } from './stock/availability.js';
 
 /*
  * Reorder suggestions (pure, no I/O). Built on a sales velocity window and a stock aggregate.
@@ -107,7 +107,7 @@ interface Candidate {
 
 export function reorderSuggestions(input: ReorderInput): ReorderResult {
   const { velocity, stock, leadTimeDays, targetCoverDays } = input;
-  const universe = input.products.filter(isInUniverse);
+  const universe = input.products.filter(isStockProduct);
   const matcher = createVelocityMatcher(velocity.entries);
 
   const candidates: Candidate[] = [];
@@ -209,13 +209,6 @@ export function reorderSuggestions(input: ReorderInput): ReorderResult {
     },
     top: candidates.slice(0, limit).map((c) => c.row),
   };
-}
-
-function isInUniverse(p: ProductRow): boolean {
-  const type = typeof p.Type === 'string' ? p.Type.trim().toLowerCase() : '';
-  if (type === 'service') return false;
-  const status = typeof p.Status === 'string' ? p.Status.trim().toLowerCase() : '';
-  return status !== 'deprecated';
 }
 
 /** Null (no cover) sorts last. */

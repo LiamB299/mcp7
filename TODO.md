@@ -20,8 +20,8 @@ Quick checklist for you. Context: [`docs/handoff/2026-11-06-cin7-mcp-roadmap.md`
 
 ## Done 2026-11-06 (third session)
 - **No writes to Cin7 this iteration** (your rule, also in memory): no write probes (R9 stays unverified), no write tools (R5).
-- R3 done: `reorder_suggestions` (ADR 0007, PR #21). Live gate: join verified, quantity parity exact; `stock_health` counts 3 Service products as below threshold (follow-up).
-- Open from this: **revise Q12** before any run (it cannot discriminate on this sandbox as written), then ask for approval to run `eval/truth-reorder.mjs`; fix `stock_health` to skip Service products; R4 (negative-stock explanations) needs open-order lines in the cache.
+- R3 done: `reorder_suggestions` (ADR 0007, PR #21). Live gate: join verified, quantity parity exact; `stock_health` counted 3 Service products as below threshold: fixed in the follow-up PR (it now skips Service and deprecated products).
+- Open from this: Q12 is deferred (not evaluable on this sparse sandbox; revisit with production-like data); R4 (negative-stock explanations) needs open-order lines in the cache.
 
 ## Starter prompt for the new session
-> Read `docs/handoff/2026-11-06-cin7-mcp-roadmap.md` (sections 0, 2 and 7; it predates R1 to R3, so also read ADR 0006 and 0007), `README.md` and `CLAUDE.md`. Then plan with me the next step: revise Q12 and (with my approval) evaluate `reorder_suggestions`, fix `stock_health` to skip Service products, or negative-stock explanations (R4, needs open-order lines in the cache). No writes to Cin7 this iteration. Use plan mode, an advisor check, and Haiku agents with high effort. Do not run evaluations without asking.
+> Read `docs/handoff/2026-11-06-cin7-mcp-roadmap.md` (sections 0, 2 and 7; it predates R1 to R3, so also read ADR 0006 and 0007), `README.md` and `CLAUDE.md`. Then plan with me the next step: negative-stock explanations (R4, needs open-order lines in the cache) or something from the deferred list in the handoff. No writes to Cin7 this iteration. Use plan mode, an advisor check, and Haiku agents with high effort. Do not run evaluations without asking.

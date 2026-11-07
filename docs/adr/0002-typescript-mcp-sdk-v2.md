@@ -20,9 +20,9 @@ Option 1. Node >=22, ESM, `tsc` build, `tsx` dev, vitest, Biome, npm. Native `fe
 - `src/cin7/client.ts` is the single upstream choke point where rate limiting (60/min/key), retry and caching will live.
 
 <!-- retire-chat:progress:start -->
-## Progress and where to continue (as of 2026-11-06)
+## Progress and where to continue (as of 2026-11-07)
 
-Built and in daily use; 194 tests pass. Gap: Streamable HTTP (remote or multi-user use, authorization) is not implemented and no adapter is imported anywhere in `src/`. Next: only if remote use is wanted, write a new ADR for HTTP transport and auth (SDK adapters exist for Node, Hono and Express); otherwise nothing.
+Built and in daily use as the stdio server; 308 tests pass. Gap verified in code: Streamable HTTP (remote or multi-user use, authorization) is not implemented and no HTTP adapter is imported anywhere in `src/`. Next: only if remote use is wanted, write a new ADR for HTTP transport and auth (register R8); otherwise nothing.
 
-Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-06-cin7-mcp-roadmap.md`.
+Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-07-mvp-closed.md`.
 <!-- retire-chat:progress:end -->

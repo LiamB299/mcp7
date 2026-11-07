@@ -3,8 +3,8 @@
 ## Purpose
 Build an MCP server for **Cin7 Core** (ERP, formerly DEAR Inventory). Brief: *choose a problem the MCP solves*, do **not** replicate the REST API 1:1. Chosen problem (ADRs 0003 to 0005): a read-only insight server for Claude Code that answers business questions (receivables, sales, stock, orders, revenue by SKU) with correct, stated definitions, against a sandbox.
 
-## Status (2026-11-06)
-Built and merged: eleven tools (adds `reorder_suggestions`, ADR 0007), line-level snapshot cache, evaluation harness, seven ADRs, research and design docs. `receivables_overdue` and `sales_summary` moved to the cache document basis (ADR 0006, live-verified; evaluation re-run pending approval). This iteration is read-only against Cin7 (no write probes or write tools). Next (ordered in `docs/handoff/2026-11-06-cin7-mcp-roadmap.md`): negative-stock explanations (R4). Q12 (reorder evaluation) is deferred: not evaluable on this sandbox. Open items and user actions: the handoff register. Start a new session by reading that file, then `README.md`.
+## Status (2026-11-07): MVP closed
+Built and merged: eleven tools (adds `reorder_suggestions`, ADR 0007), line-level snapshot cache, evaluation harness, seven ADRs, research and design docs. `receivables_overdue` and `sales_summary` moved to the cache document basis (ADR 0006, live-verified; wave 4 re-evaluation: Q1 to Q3 treatment 3 of 3 correct, baseline 0 of 3, one run per arm). This iteration is read-only against Cin7 (no write probes or write tools). Next (ordered in `docs/handoff/2026-11-07-mvp-closed.md`): negative-stock explanations (R4). Q12 (reorder evaluation) is deferred: not evaluable on this sandbox. Open items and user actions: the handoff register. Start a new session by reading that file, then `README.md`.
 
 Key facts: auth via `api-auth-accountid` + `api-auth-applicationkey` headers; 60 calls/min per key; list endpoints are header-only (fan-out needed for lines); foreign keys by name; Cin7 list rollups (`InvoiceAmount` etc.) disagree with documents on about 30% of sandbox sales. MCP spec per research: 2026-07-28 (stateless).
 

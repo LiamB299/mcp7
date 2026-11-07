@@ -33,7 +33,9 @@ Option 2.
 - Production scale is unknown (about 18 minutes per 1,000 invoiced sales on first load).
 
 <!-- retire-chat:progress:start -->
-## Progress and where to continue (as of 2026-11-06)
+## Progress and where to continue (as of 2026-11-07)
 
-Built, live-verified (above) and re-evaluated (wave 4 in [mvp-evaluation.md](../research/mvp-evaluation.md): `eval/truth-docs.mjs` matched the tools exactly; Q1 to Q3 treatment 3 of 3 correct against baseline 0 of 3, one run per arm, treatment cold each time so not faster on Q2 and Q3). `eval/run.mjs` now grades Q1 to Q3 against `truth-docs.json` with the tax readings pre-registered. Not done: (1) more repetitions and a warm-cache timing for these questions; (2) whether a payment bumps `Updated` is untested, so the full header listing is the safeguard (R9); (3) no interactive Claude Code timeout test for the multi-minute first load (R10); (4) whether `paid` already reflects refunded credit notes is unverified, which is why `withoutCreditNetting` is shown. Next: finalise acceptance on merge, or amend this ADR if the repetitions disagree.
+Built, live-gated and re-evaluated. Gate (sandbox, read-only): 43 overdue sales, 83,735.44 netted and 86,610.44 without credit netting; API-channel revenue for sales ordered July to September 14,195.12 ex-tax and 14,937.56 inc-tax; top customer 54,625 inc-tax; the embedded list rollup reproduced the old 29 sales and 26,447, 10,349 and about 24,756 exactly. Wave 4: `eval/truth-docs.mjs` matched the tools exactly; Q1 to Q3 treatment 3 of 3 correct, baseline 0 of 3, one run per arm, treatment cold each run (so not faster on Q2 and Q3). Open: more repetitions and a warm-cache timing (R15); whether a payment bumps `Updated` is untested, so the full header listing is the safeguard (R4); whether invoice `paid` already reflects refunded credit notes is unverified, which is why `withoutCreditNetting` is shown (R13); the first load of all history takes minutes and its interactive timeout is untested (R5).
+
+Full context, the ledger of what was asked and the open-work register: `docs/handoff/2026-11-07-mvp-closed.md`.
 <!-- retire-chat:progress:end -->

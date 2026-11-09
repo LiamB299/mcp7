@@ -147,6 +147,31 @@ git pull && npm install && npm run build    # then restart claude: it runs dist/
 
 **For developers:** re-run the evaluation after changing tools: see [`eval/README.md`](eval/README.md). Runs are headless Claude sessions that cost real API money (a few cents each, dozens per wave) and the revenue-by-SKU truth script makes about 165 paced Cin7 calls: state the estimate and get approval first.
 
+## Try it: examples that show it working
+
+Run these in Claude Code from the repo root, in this order. Each prompt can be pasted as is. The "you should see" lines are **reference numbers from the project's sandbox account** (run 2026-11-09, currency ZAR): your account will differ, but the *shape* of each answer and the checks between answers should hold. Every answer from a cache-backed tool also carries `complete: true` when all data is loaded, plus a `definition` saying exactly what the number includes.
+
+**Fast, no cache (a few seconds each)**
+
+1. **Connection.** *"Check the Cin7 connection."* (`cin7_connection_check`) You should see your company name, currency and time zone (sandbox: ZAR, Africa/Johannesburg). If this fails, nothing else will work: see Troubleshooting above.
+2. **Stock value.** *"What is the total value of my stock and where is it held? Give me the top 3 products."* (`stock_position`) Sandbox: 2,080,603.69 across 7 locations, 141 products with stock rows, 15 negative-available rows over 9 products. The total is a **value** (on hand times average cost), not units (14,808 units); the answer says so.
+3. **Stock health.** *"Give me a stock health check."* (`stock_health`) Sandbox: 9 products with negative available stock, 22 with stock on order but none on hand, 6 at or below their reorder point (3 already on order; 17 non-stock products such as services are excluded), 4 availability rows where Available is not OnHand minus Allocated.
+4. **Order pipeline.** *"How many open sales are waiting to be picked or shipped, and how many purchases are waiting for goods?"* (`open_orders_pipeline`) Sandbox: 114 of 174 sales open (7 backordered), 38 of them showing a master status that hides how far along they are; 65 of 90 open purchases awaiting receipt. The stage comes from the order's sub-statuses, not Cin7's misleading master status.
+5. **One order.** *"Look up order SO-1234 and tell me where it is."* (`order_lookup`) Replace the number with a real order number from your account. You should see its derived stage, lines (capped at 20) and totals, and no contact details, addresses or notes.
+
+**Cache-backed (the first question loads the cache)**
+
+6. **Cache status, before.** *"What is in the local cache?"* (`cache_status`) First time: `exists: false` and a note to build it. This call never touches Cin7.
+7. **Overdue receivables (slow the first time).** *"Which invoices are overdue as of today and how much is owed? Show the 3 largest."* (`receivables_overdue`) Sandbox first call: about 165 seconds while it loads 147 invoiced sales (Claude may report progress). Then: 43 overdue sales worth 83,735.44, none without a due date, `complete: true`. The same answer carries `withoutCreditNetting` and `listRollup`: Cin7's own list totals said 29 overdue sales (26,447) on 2026-11-05, which is the number a naive script reports.
+8. **Cache status, after.** Ask question 6 again. Sandbox: 174 sales, 147 with documents, about 178 KB, and a **rollup drift** summary: Cin7's list totals disagree with the invoice and credit-note documents on 49 of 147 sales (18 credit notes not netted, 10 showing zero despite an invoice, 21 other).
+9. **Sales by month.** *"Show me sales by month."* (`sales_summary`) Answers in about a second now. Sandbox: 147 sales, 24 credit notes, revenue 123,874.48 ex-tax (134,854.52 with tax) over 18 months, and a `listRollup` block showing the old list-based total (78,586), far lower.
+10. **Sales by SKU.** *"Top 3 SKUs by revenue and margin."* (`sales_by_sku`) Sandbox: revenue 111,580.08 ex-tax, cost 73,744.96, margin 37,835.12 on 409 units, with the other 32 SKUs rolled into `other`.
+11. **Check that 9 and 10 agree.** Document totals include freight and other additional charges; SKU rows do not. Sandbox: 123,874.48 minus 111,580.08 is 12,294.40, exactly the `additionalCharges` figure reported by `sales_by_sku`. If your two numbers differ by that field, the tools reconcile.
+12. **Reorder suggestions.** *"What should I reorder, assuming a 14-day lead time and 30 days of cover? Show the top 3."* (`reorder_suggestions`) You should see the assumptions echoed back, a 90-day sales window, days of cover and a suggested quantity per product. Sandbox: 1,610 stock products, only 3 sold in the last 90 days, 6 at or below their Cin7 reorder point and none running out within 14 days: the sandbox is too quiet to show a real replenishment picture, and the answer says why a threshold-only product shows a suggested quantity of 0.
+13. **Ask Claude to explain a number.** *"What does the overdue total include, and why is it different from Cin7's own list total?"* Claude answers from the tool's `definition` text: invoices minus paid minus credit notes, tax-inclusive, with the list rollup shown as the alternative.
+
+**Without Claude (to see the raw answers):** `npm run inspect` opens the MCP Inspector on the built server. Pick a tool and paste arguments, for example `{ "topN": 3 }` for `stock_health`, `{ "asOf": "2026-11-05", "topN": 3 }` for `receivables_overdue`, or `{ "groupBy": "month" }` for `sales_summary`.
+
 ## Limitations
 
 - **Sandbox only.** Built and tested against a Cin7 sandbox, which is small and synthetic. Production scale is untested.

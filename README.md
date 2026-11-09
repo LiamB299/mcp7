@@ -75,19 +75,39 @@ Not built yet (prioritised in [`docs/research/prioritisation.md`](docs/research/
 - Tooling: vitest (unit tests with synthetic fixtures), Biome (lint and format), `tsc`, npm.
 - Implementation of individual tools is delegated to Haiku agents and reviewed (see `CLAUDE.md`).
 
-## Setup
+## Getting started
 
+**You need:** Node 22 or later (`.nvmrc` pins 22; `nvm use` picks it up), npm, git, the [Claude Code](https://claude.com/claude-code) CLI, and a Cin7 Core account with an API application (use a sandbox or test account: this project was built and tested against one).
+
+### 1. Clone and install
 ```bash
+git clone git@github.com:LiamB299/mcp7.git      # or: https://github.com/LiamB299/mcp7.git
+cd mcp7
 npm install
-cp .env.example .env    # CIN7_ACCOUNT_ID, CIN7_APPLICATION_KEY, CIN7_BASE_URL (API root, no /v2)
-npm run build
-npm test                # typecheck, lint: npm run typecheck && npm run lint
+npm run build        # compiles to dist/ (gitignored: rebuild after every pull)
+npm test             # 308 tests, no network, no credentials needed
 ```
 
-The server loads the repo-root `.env` itself (path resolved from the script, so the launch directory does not matter) and appends `/v2` to `CIN7_BASE_URL`. Optional: `CIN7_CACHE_DIR` for the line-level cache location.
+### 2. Add your Cin7 credentials
+Create an API application in Cin7 Core (the "API setup" page in the app, `https://inventory.dearsystems.com/ExternalAPI`; menu names can differ by version) and copy its **Account ID** and **Application Key**. Then:
 
-### Use with Claude Code
-`.mcp.json` registers the server for this repo. Project-scoped servers need a one-time approval: run `claude` in the repo and accept it (check with `claude mcp list`). For other clients:
+```bash
+cp .env.example .env
+```
+and fill in `CIN7_ACCOUNT_ID` and `CIN7_APPLICATION_KEY`. Leave `CIN7_BASE_URL` at its default (the API root without `/v2`; the server appends `/v2`). Optional: `CIN7_CACHE_DIR` moves the local cache (default `.cache/cin7`).
+
+- `.env` is gitignored. Never commit it or paste the key into a chat.
+- The server loads this `.env` itself (the path is resolved from the script, so the launch directory does not matter). The key therefore never enters Claude's context.
+- Without it the server exits at start-up with "Invalid configuration" and names the missing variables.
+
+### 3. Connect it to Claude Code
+`.mcp.json` registers the server for this repo, so from the repo root:
+
+```bash
+claude               # accept the one-time prompt to approve the "cin7-core" project server
+claude mcp list      # expect: cin7-core: node dist/index.js - Connected
+```
+Inside Claude Code, `/mcp` shows the server and its eleven tools. Start `claude` from the repo root: the entry uses the relative path `dist/index.js`. To use the server from another directory or another MCP client, register it with an absolute path:
 
 ```json
 {
@@ -96,7 +116,36 @@ The server loads the repo-root `.env` itself (path resolved from the script, so 
   }
 }
 ```
-Debug with `npm run inspect`. Re-run the evaluation after changing tools: see [`eval/README.md`](eval/README.md). Runs are headless Claude sessions that cost real API money (a few cents each, dozens per wave) and the revenue-by-SKU truth script makes about 165 paced Cin7 calls: state the estimate and get approval first.
+
+### 4. Ask questions
+Start with "Check the Cin7 connection" (`cin7_connection_check`: company, currency, time zone). Then plain business questions, for example:
+
+| Ask | Tool |
+|---|---|
+| "Which invoices are overdue as of today, and how old are they?" | `receivables_overdue` |
+| "Revenue by channel for July to September, by order date" | `sales_summary` (`dateBasis` `order`) |
+| "Top 10 SKUs by revenue and margin" | `sales_by_sku` |
+| "What should I reorder, assuming a 14-day lead time and 30 days of cover?" | `reorder_suggestions` |
+| "Which products are negative or below their reorder point?" | `stock_health` |
+| "Stock value by location" | `stock_position` |
+| "How many open sales are waiting to be picked or shipped?" | `open_orders_pipeline` |
+| "Show me order SO-1234 and where it is" | `order_lookup` |
+
+Every tool states its definitions in its description and its answer, so you can ask Claude "what does that number include?".
+
+**The first cache-backed question is slow.** `receivables_overdue`, `sales_summary`, `sales_by_sku` and `reorder_suggestions` read a local snapshot of sale details, which costs one Cin7 call per invoiced sale (about 1.1 s each: roughly 3 minutes for the sandbox's 147 sales, about 18 minutes per 1,000). It is resumable and reports progress; if an answer says `complete: false`, its totals are partial, so ask again to continue. Later questions refresh only what changed. `cache_status` shows what is cached; `cache_refresh` warms it ahead of time; deleting `.cache/cin7` rebuilds it from scratch.
+
+### 5. Update and troubleshoot
+```bash
+git pull && npm install && npm run build    # then restart claude: it runs dist/, not src/
+```
+- **"Pending approval" or the server is missing from `claude mcp list`:** run `claude` in the repo root and accept the project-server prompt.
+- **"Invalid configuration" or a 401 from Cin7:** check `.env` (account ID, key and base URL) against the API setup page.
+- **Anything else:** `npm run inspect` opens the MCP Inspector on the built server; server logs go to stderr only (stdout is the protocol channel).
+- **Rate limit:** Cin7 allows 60 calls per minute per key, shared with anyone else using it; the client paces requests and retries 429 and 503 automatically.
+- This server **never writes to Cin7**. The cache-backed tools write one local file (`.cache/cin7`), which holds customer business names and invoice lines: keep it out of version control (it is gitignored).
+
+**For developers:** re-run the evaluation after changing tools: see [`eval/README.md`](eval/README.md). Runs are headless Claude sessions that cost real API money (a few cents each, dozens per wave) and the revenue-by-SKU truth script makes about 165 paced Cin7 calls: state the estimate and get approval first.
 
 ## Limitations
 
